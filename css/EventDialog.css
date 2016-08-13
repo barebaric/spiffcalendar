@@ -98,6 +98,12 @@ display: inline;
 margin-top: .5em;
 }
 
+.SpiffCalendarDialog .recurring-range select,
+.SpiffCalendarDialog .recurring-range input {
+display: inline;
+width: auto;
+}
+
 .SpiffCalendarDialog .error {
 background-color: #faa !important;
 }

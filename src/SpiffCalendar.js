@@ -129,7 +129,8 @@ var SpiffCalendar = function(div, options) {
 
     this.add_event = function(event_data) {
         var date = isodate(event_data.date);
-        var events = that._div.find('*[data-date="' + date + '"] .events');
+        var day = that._div.find('*[data-date="'+date+'"]:not(.placeholder)');
+        var events = day.find('.events');
         var theevent = that._calendar_event(event_data);
         events.append(theevent);
         return theevent;
@@ -346,27 +347,44 @@ var SpiffCalendar = function(div, options) {
             if (day.is('.day.active'))
                 return;
             table.find('.day.active').each(function(index, day) {
-                $(day).removeClass('active');
-                $(day).css({
-                    top: 0,
-                    left: 0,
-                    width: 'auto',
-                    height: 'auto'
+                $(day).animate({
+                    top: $(day).data('original_top'),
+                    left: $(day).data('original_left'),
+                    width: $(day).data('original_width'),
+                    height: $(day).data('original_height')
+                }, 100, function() {
+                    $(day).removeClass('active').css({
+                        top: 0,
+                        left: 0,
+                        width: 'auto',
+                        height: 'auto'
+                    });
+                    $(day).data('placeholder').remove();
                 });
             });
-            table.find('.day.placeholder').remove();
         });
 
         table.find('.day').click(function(e) {
             var day = $(e.target).closest('.day');
-            if (!day.is('.day') || day.is('.active'))
+            if (!day.is('.day') || day.hasClass('placeholder'))
                 return;
 
+            var is_event = ($(e.target).closest('.event').length > 0);
+            var new_editor = $(e.target).find('.unfolded').filter(function() {
+                return typeof $(this).data('event').id === 'undefined';
+            });
+            var have_new_editor = (new_editor.length > 0);
+            var date = from_isodate(day.attr('data-date'));
+
             // Create a new event if needed.
-            if ($(e.target).closest('.event').length == 0) {
-                var date = from_isodate(day.attr('data-date'));
+            if (!is_event && !have_new_editor)
                 var theevent = that.add_event({date: date});
-                theevent.click();
+            else
+                var theevent = $('');
+
+            if (day.hasClass('active')) {
+                theevent.click(); // unfolds the event
+                return;
             }
 
             // Create an exact clone of the day as a placeholder. The reason
@@ -378,9 +396,15 @@ var SpiffCalendar = function(div, options) {
             var placeholder = day.clone();
             placeholder.css('visibility', 'hidden');
             placeholder.addClass('placeholder');
+            placeholder.find('.event').removeClass('unfolded');
 
             var w = day.width()
             var h = day.height()
+            day.data('placeholder', placeholder);
+            day.data('original_top', day.offset().top);
+            day.data('original_left', day.offset().left);
+            day.data('original_width', w);
+            day.data('original_height', h);
             day.css({
                 top: day.offset().top,
                 left: day.offset().left,
@@ -388,18 +412,20 @@ var SpiffCalendar = function(div, options) {
                 height: h
             });
             day.addClass('active');
+            theevent.click(); // Unfold the clicked event.
+
             placeholder.insertAfter(day);
 
             // Resize the day.
             var top = day.offset().top - h/2;
             var left = day.offset().left - w/2;
-            h = 2*h;
+            h = 2.5*h;
             w = 2*w;
 
             if (top < 0)
                 top = 20;
             if (top + h > $(window).height())
-                top -= h/4;
+                top -= h/3;
             if (top < 0) {
                 top = 20;
                 h = $(window).height() - 40;
@@ -423,6 +449,8 @@ var SpiffCalendar = function(div, options) {
         });
 
         this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
+            if (that._div.find('.active').length)
+                return;
             if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0)
                 that.next();
             else
@@ -505,8 +533,10 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.append('\
                 <div class="label">\
-                    <span class="label-time"></span>\
+                    <span class="label-icon"></span>\
+                    <span class="label-prefix"></span>\
                     <span class="label-name"></span>\
+                    <span class="label-suffix"></span>\
                 </div>\
                 <div class="editor">\
                     <div class="general">\
@@ -537,10 +567,10 @@ var SpiffCalendarEventRenderer = function(options) {
 
         // Add data to the UI.
         if (event_data.time)
-            html.find('.label-time').show()
+            html.find('.label-prefix').show()
         else
-            html.find('.label-time').hide()
-        html.find('.label-time').text(event_data.time);
+            html.find('.label-prefix').hide()
+        html.find('.label-prefix').text(event_data.time);
         html.find('.label-name').text(event_data.name);
         html.find('.general-time').text(event_data.time);
         html.find('.general-name').val(event_data.name);
@@ -609,10 +639,13 @@ var SpiffCalendarEventRenderer = function(options) {
             }
         });
 
-        $('body').mousedown(function(e) {
-            if ($(e.target).closest('.event').data('event') == event_data)
-                return;
+        $('body').click(function(e) {
             if ($(e.target).closest('.ui-datepicker').length)
+                return;
+            var theevent = $(e.target).closest('.event');
+            if (theevent.data('event') == event_data)
+                return;
+            if (theevent.length == 0 && $(e.target).closest('.day').is('.active'))
                 return;
             html.removeClass('unfolded');
             if (!event_data.id)
