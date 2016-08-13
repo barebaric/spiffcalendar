@@ -505,7 +505,7 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.append('\
                 <div class="label">\
-                    <span class="label-time"></span>\
+                    <span class="label-prefix"></span>\
                     <span class="label-name"></span>\
                 </div>\
                 <div class="editor">\
@@ -537,10 +537,10 @@ var SpiffCalendarEventRenderer = function(options) {
 
         // Add data to the UI.
         if (event_data.time)
-            html.find('.label-time').show()
+            html.find('.label-prefix').show()
         else
-            html.find('.label-time').hide()
-        html.find('.label-time').text(event_data.time);
+            html.find('.label-prefix').hide()
+        html.find('.label-prefix').text(event_data.time);
         html.find('.label-name').text(event_data.name);
         html.find('.general-time').text(event_data.time);
         html.find('.general-name').val(event_data.name);
