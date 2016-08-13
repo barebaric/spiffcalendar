@@ -129,7 +129,8 @@ var SpiffCalendar = function(div, options) {
 
     this.add_event = function(event_data) {
         var date = isodate(event_data.date);
-        var events = that._div.find('*[data-date="' + date + '"] .events');
+        var day = that._div.find('*[data-date="'+date+'"]:not(.placeholder)');
+        var events = day.find('.events');
         var theevent = that._calendar_event(event_data);
         events.append(theevent);
         return theevent;
@@ -365,8 +366,26 @@ var SpiffCalendar = function(div, options) {
 
         table.find('.day').click(function(e) {
             var day = $(e.target).closest('.day');
-            if (!day.is('.day') || day.hasClass('active') || day.hasClass('placeholder'))
+            if (!day.is('.day') || day.hasClass('placeholder'))
                 return;
+
+            var is_event = ($(e.target).closest('.event').length > 0);
+            var new_editor = $(e.target).find('.unfolded').filter(function() {
+                return typeof $(this).data('event').id === 'undefined';
+            });
+            var have_new_editor = (new_editor.length > 0);
+            var date = from_isodate(day.attr('data-date'));
+
+            // Create a new event if needed.
+            if (!is_event && !have_new_editor)
+                var theevent = that.add_event({date: date});
+            else
+                var theevent = $('');
+
+            if (day.hasClass('active')) {
+                theevent.click(); // unfolds the event
+                return;
+            }
 
             // Create an exact clone of the day as a placeholder. The reason
             // that we don't use the clone as the editor is that a) there may be
@@ -393,26 +412,20 @@ var SpiffCalendar = function(div, options) {
                 height: h
             });
             day.addClass('active');
-
-            // Create a new event if needed.
-            if ($(e.target).closest('.event').length == 0) {
-                var date = from_isodate(day.attr('data-date'));
-                var theevent = that.add_event({date: date});
-                theevent.click();
-            }
+            theevent.click(); // Unfold the clicked event.
 
             placeholder.insertAfter(day);
 
             // Resize the day.
             var top = day.offset().top - h/2;
             var left = day.offset().left - w/2;
-            h = 2*h;
+            h = 2.5*h;
             w = 2*w;
 
             if (top < 0)
                 top = 20;
             if (top + h > $(window).height())
-                top -= h/4;
+                top -= h/3;
             if (top < 0) {
                 top = 20;
                 h = $(window).height() - 40;
@@ -624,10 +637,13 @@ var SpiffCalendarEventRenderer = function(options) {
             }
         });
 
-        $('body').mousedown(function(e) {
-            if ($(e.target).closest('.event').data('event') == event_data)
-                return;
+        $('body').click(function(e) {
             if ($(e.target).closest('.ui-datepicker').length)
+                return;
+            var theevent = $(e.target).closest('.event');
+            if (theevent.data('event') == event_data)
+                return;
+            if (theevent.length == 0 && $(e.target).closest('.day').is('.active'))
                 return;
             html.removeClass('unfolded');
             if (!event_data.id)
