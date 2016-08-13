@@ -449,6 +449,8 @@ var SpiffCalendar = function(div, options) {
         });
 
         this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
+            if (that._div.find('.active').length)
+                return;
             if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0)
                 that.next();
             else
