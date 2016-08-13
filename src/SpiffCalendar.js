@@ -346,28 +346,27 @@ var SpiffCalendar = function(div, options) {
             if (day.is('.day.active'))
                 return;
             table.find('.day.active').each(function(index, day) {
-                $(day).removeClass('active');
-                $(day).css({
-                    top: 0,
-                    left: 0,
-                    width: 'auto',
-                    height: 'auto'
+                $(day).animate({
+                    top: $(day).data('original_top'),
+                    left: $(day).data('original_left'),
+                    width: $(day).data('original_width'),
+                    height: $(day).data('original_height')
+                }, 100, function() {
+                    $(day).removeClass('active').css({
+                        top: 0,
+                        left: 0,
+                        width: 'auto',
+                        height: 'auto'
+                    });
+                    $(day).data('placeholder').remove();
                 });
             });
-            table.find('.day.placeholder').remove();
         });
 
         table.find('.day').click(function(e) {
             var day = $(e.target).closest('.day');
-            if (!day.is('.day') || day.is('.active'))
+            if (!day.is('.day') || day.hasClass('active') || day.hasClass('placeholder'))
                 return;
-
-            // Create a new event if needed.
-            if ($(e.target).closest('.event').length == 0) {
-                var date = from_isodate(day.attr('data-date'));
-                var theevent = that.add_event({date: date});
-                theevent.click();
-            }
 
             // Create an exact clone of the day as a placeholder. The reason
             // that we don't use the clone as the editor is that a) there may be
@@ -378,9 +377,15 @@ var SpiffCalendar = function(div, options) {
             var placeholder = day.clone();
             placeholder.css('visibility', 'hidden');
             placeholder.addClass('placeholder');
+            placeholder.find('.event').removeClass('unfolded');
 
             var w = day.width()
             var h = day.height()
+            day.data('placeholder', placeholder);
+            day.data('original_top', day.offset().top);
+            day.data('original_left', day.offset().left);
+            day.data('original_width', w);
+            day.data('original_height', h);
             day.css({
                 top: day.offset().top,
                 left: day.offset().left,
@@ -388,6 +393,14 @@ var SpiffCalendar = function(div, options) {
                 height: h
             });
             day.addClass('active');
+
+            // Create a new event if needed.
+            if ($(e.target).closest('.event').length == 0) {
+                var date = from_isodate(day.attr('data-date'));
+                var theevent = that.add_event({date: date});
+                theevent.click();
+            }
+
             placeholder.insertAfter(day);
 
             // Resize the day.
@@ -505,8 +518,10 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.append('\
                 <div class="label">\
+                    <span class="label-icon"></span>\
                     <span class="label-prefix"></span>\
                     <span class="label-name"></span>\
+                    <span class="label-suffix"></span>\
                 </div>\
                 <div class="editor">\
                     <div class="general">\

@@ -159,7 +159,8 @@ margin: 1px .2em;
 border-radius: 3px;
 z-index: 12;
 color: #666;
-padding: .1em .2em;
+border: 1px solid white;
+padding: .05em .2em;
 text-align: left;
 min-height: 1.7em;
 box-shadow: 0 2px 3px rgba(0, 0, 0, .3);
@@ -175,6 +176,10 @@ z-index: 15;
 
 .SpiffCalendar .ui-draggable-dragging {
 z-index: 50;
+}
+
+.SpiffCalendar .event .label {
+overflow: hidden;
 }
 
 .SpiffCalendar .event a {
@@ -222,7 +227,7 @@ max-height: 500px;
 }
 
 .SpiffCalendar .event.unfolded .label {
-display: none;
+height: 0.0001px;
 }
 
 .SpiffCalendar #event-buttons {
@@ -234,28 +239,31 @@ text-align: right;
 float: left;
 }
 
-.SpiffCalendar .event.recurring {
-background: url(../icons/recurring.svg) no-repeat 5px center;
+.SpiffCalendar .event .label-icon {
 background-size: 11px 11px;
-padding-left: 20px;
+background-repeat: no-repeat;
+background-position: left center;
 }
 
-.SpiffCalendar .event.exception {
-background: url(../icons/exception.svg) no-repeat 5px center;
-background-size: 11px 11px;
-padding-left: 20px;
+.SpiffCalendar .event.recurring .label-icon {
+background-image: url(../icons/recurring.svg);
+padding-left: 15px;
+}
+
+.SpiffCalendar .event.exception .label-icon {
+background-image: url(../icons/exception.svg);
+padding-left: 15px;
 }
 
 .SpiffCalendar .event:not(.timed) {
 background-color: #f90;
+border-color: #f90;
 }
 
 .SpiffCalendar .event.unfolded {
 flex: 0 1 auto;
-padding-left: .2em;
 background-image: none;
 background-color: white;
-border: 1px solid #f90;
-padding: .4em;
+border-color: #f90;
 margin-bottom: .4em;
 }
