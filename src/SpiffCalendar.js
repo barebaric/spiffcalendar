@@ -681,7 +681,7 @@ var SpiffCalendarEventRenderer = function(options) {
 // Dialog for editing event details.
 // ======================================================================
 var SpiffCalendarEventDialog = function(options) {
-    this._div = $('<div class="SpiffCalendarDialog modal" style="display: none"></div>');
+    this._div = $('<div class="SpiffCalendarDialog"></div>');
     var that = this;
     var settings = $.extend(true, {
         event_data: {date: new Date()},
@@ -852,6 +852,8 @@ var SpiffCalendarEventDialog = function(options) {
 
     this._init = function() {
         that._div.append('\
+            <div class="modal-content">\
+                <h5>Event properties</h5>\
                 <div class="general">\
                     <input id="general-name" type="text" placeholder="Name"/>\
                     <input id="general-date" type="text" placeholder="Date"/>\
@@ -864,7 +866,8 @@ var SpiffCalendarEventDialog = function(options) {
                 <div id="buttons">\
                     <button id="button-delete">Delete</button>\
                     <button id="button-save">Save</button>\
-                </div>');
+                </div>\
+            </div>');
         that._div.find('#error').hide();
         that._div.find('#general-name').data('validator', validator_required);
         that._div.find('#general-date').datepicker();
@@ -926,12 +929,12 @@ var SpiffCalendarEventDialog = function(options) {
                 e.stopPropagation();
                 return;
             }
-            that._div.dialog('close');
+            that._div.parent().closeModal();
             that._serialize(settings.event_data);
             return settings.on_save(settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
-            that._div.dialog('close');
+            that._div.parent().closeModal();
             return settings.on_delete(settings.event_data);
         });
     };
@@ -1077,15 +1080,11 @@ var SpiffCalendarEventDialog = function(options) {
     this.show = function(event_data) {
         if (event_data)
             settings.event_data = $.extend(true, {}, event_data);
-        this._div.show();
         this._update();
-        this._div.dialog({
-            title: 'Event properties',
-            buttons: {
-            },
-            width: '50em',
-            height: 'auto'
-        });
+        var eventModalID = event_data.date.toString().replace(/\s+/g, '').split("00:")[0];
+        $("#wrap").after("<div id="+eventModalID+" class='modal SpiffCalendarDialog ui-dialog-content ui-widget-content'></div>");
+        $("#"+eventModalID+"").html(this._div);
+        $("#"+eventModalID+"").openModal();
 
         // Trigger validation.
         that._div.find('input').change();
