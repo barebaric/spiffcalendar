@@ -112,8 +112,6 @@ var SpiffCalendarBackend = function(options) {
     var that = this;
 
     this.settings = $.extend(true, {
-        event_cache: {},
-        day_cache: {},
         add_event: function(backend, event_data, success_cb) {},
         save_event: function(backend, event_data, success_cb) {},
         delete_event: function(backend, event_data, success_cb) {},
@@ -123,26 +121,25 @@ var SpiffCalendarBackend = function(options) {
     }, options);
     var settings = this.settings;
 
-    // Initialize the cache.
-    this.event_cache = $.extend(true, {}, settings.event_cache);
-    this.day_cache = $.extend(true, {}, settings.day_cache);
-    $.each(this.event_cache, function(event) {
-        event.date = isodate(event.date);
-    });
-    $.each(this.day_cache, function(key, day) {
-        delete that.day_cache[key];
-        that.day_cache[isodate(key)] = day;
-    });
+    // These object hold the cache. event_id_to_date is needed because
+    // the cache contains only references, so when the date of an
+    // event changes it would be difficult to find it in day_cache
+    // for updates.
+    this.event_cache = {};
+    this.day_cache = {};
+    this.event_id_to_date = {};
 
     // Rest is public API.
     this.cache_event = function(event_data) {
         that.invalidate_event(event_data);
 
         // Add the event to the event cache.
+        var date = isodate(event_data.date);
+        console.log('caching', event_data, date);
         that.event_cache[event_data.id] = event_data;
+        that.event_id_to_date[event_data.id] = date;
 
         // Also add it to the day cache.
-        var date = isodate(event_data.date);
         var day = that.day_cache[date];
         if (typeof day === "undefined")
             day = that.day_cache[date] = {};
@@ -163,14 +160,15 @@ var SpiffCalendarBackend = function(options) {
 
     this.invalidate_event = function(event_data) {
         // Remove the old event from the event cache.
-        var old_event_data = that.event_cache[event_data.id];
-        if (!old_event_data)
+        var old_date = that.event_id_to_date[event_data.id];
+        console.log('invalidating', event_data, old_date);
+        if (!old_date)
             return;
         delete that.event_cache[event_data.id];
+        delete that.event_id_to_date[event_data.id];
 
         // Also remove it from the day cache. Since the date may have changed,
         // we need to find the day data using the formerly cached event object.
-        var old_date = isodate(old_event_data.date);
         var day = that.day_cache[old_date];
         if (!day)
             return;
@@ -179,29 +177,27 @@ var SpiffCalendarBackend = function(options) {
             day.events.splice(index, 1);
     };
 
-    this.get_event = function(event_id, success_cb) {
+    this.get_event = function(event_id) {
         var event_data = that.event_cache[event_id];
         if (event_data)
-            return success_cb($.extend({}, event_data));
-        console.error('this should not happen: get_event called for an uncached id', event_id);
+            return event_data;
+        console.error('BUG: get_event called for an uncached id', event_id);
+    };
+
+    this.get_day_data = function(date) {
+        return that.day_cache[date] || {};
     };
 
     this.get_range = function(start, last, success_cb) {
-        var range = {};
-        var have_all = true;
         while (start <= last) {
             var key = isodate(start);
             var day = that.day_cache[key];
-            if (day == null) {
-                have_all = false;
-                break;
-            }
+            if (day == null)
+                return settings.load_range(that, start, last, success_cb);
             range[key] = day;
             start.setDate(start.getDate()+1);
         }
-        if (have_all)
-            return success_cb(range);
-        return settings.load_range(that, start, last, success_cb);
+        return success_cb();
     };
 
     this.add_event = settings.add_event;
@@ -381,22 +377,32 @@ var SpiffCalendar = function(div, options) {
     };
 
     this.refresh = function() {
+        var backend = settings.backend;
+        var days = that._div.find('.day');
         var range = that._get_visible_range();
-        settings.backend.get_range(range.start, range.last, function(data) {
+        var current = range.start;
+        var last = range.last;
+
+        settings.backend.get_range(current, last, function() {
             settings.on_refresh(that);
-            $.each(data, function(key, day_data) {
-                var date = key.replace(/-0/g, '-');
-                var day_div = that._div.find('.day[data-date="' + date + '"]');
+
+            while (current <= last) {
+                // Update general day data (footnote etc.)
+                var date = isodate(current);
+                var day_div = days.filter('[data-date="' + date + '"]');
+                var day_data = backend.get_day_data(date);
+                var footnote = settings.footnote_renderer(day_data.footnote);
+                day_div.find(".footnote").text(footnote);
+
+                // Update the events of that day.
                 var events = day_div.find('.events');
                 events.empty();
                 $.each(day_data.events, function(index, event_id) {
-                    settings.backend.get_event(event_id, function(event_data) {
-                        events.append(that._calendar_event(event_data));
-                    });
+                    var event_data = settings.backend.get_event(event_id);
+                    events.append(that._calendar_event(event_data));
                 });
-                var footnote = settings.footnote_renderer(day_data.footnote);
-                day_div.find(".footnote").text(footnote);
-            });
+                current.setDate(current.getDate()+1);
+            }
         });
     };
 

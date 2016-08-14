@@ -22,19 +22,7 @@
 <script type="text/javascript">
 $(document).ready(function() {
     // Define a mock backend.
-    var mock_events = {
-        1: {id: 1, date: '2016-07-09', freq_type: 'ONE_TIME', name: 'Test1'},
-        2: {id: 2, date: '2016-07-09', freq_type: 'ONE_TIME', is_exception: true, time: '10:00', name: 'Test2'},
-        3: {id: 3, date: '2016-07-19', freq_type: 'WEEKLY', name: 'Foo'},
-        4: {id: 4, date: '2016-07-19', name: 'Bar'}
-    };
-    var mock_days = {
-		'2016-07-09': {footnote: {text: 'day before tomorrow'}, events: [1, 2]},
-        '2016-07-19': {events: [3, 4]}
-    };
     var backend = new SpiffCalendarBackend({
-        event_cache: mock_events,
-        day_cache: mock_days,
         add_event: function(backend, event_data, success_cb) {
             console.log('add_event', event_data);
             event_data.id = uuid();
@@ -64,14 +52,28 @@ $(document).ready(function() {
             console.log('load_range', start_date, end_date);
             //In the real world, you would put the loaded data into the cache here:
             //$.each(yourevents, function(ev) { backend.cache_event(ev); });
-            success_cb(backend.day_cache);
+            success_cb();
         }
     });
 
+    // Load some data into it.
+    var mock_events = [
+        {id: 1, date: '2016-8-9', freq_type: 'ONE_TIME', name: 'Test1'},
+        {id: 2, date: '2016-8-9', freq_type: 'ONE_TIME', is_exception: true, time: '10:00', name: 'Test2'},
+        {id: 3, date: '2016-8-19', freq_type: 'WEEKLY', name: 'Foo'},
+        {id: 4, date: '2016-8-19', name: 'Bar'}
+    ];
+    var mock_days = {
+        '2016-8-9': {footnote: {text: 'day before tomorrow'}, events: [1, 2]},
+        '2016-8-19': {events: [3, 4]}
+    };
+    $.each(mock_events, function(index, ev) { backend.cache_event(ev); });
+    $.each(mock_days, backend.cache_day_data);
+
     // This is optional: Prepare the dialog window that edits recurring
-       // events.
+    // events.
     // The dialog can also be customized using options; you currently have to
-       // read the source for a list.
+    // read the source for a list.
     var event_dialog = new SpiffCalendarEventDialog();
 
     // This is also optional: Prepare the customizable event renderer.
