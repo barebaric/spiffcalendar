@@ -135,7 +135,6 @@ var SpiffCalendarBackend = function(options) {
 
         // Add the event to the event cache.
         var date = isodate(event_data.date);
-        console.log('caching', event_data, date);
         that.event_cache[event_data.id] = event_data;
         that.event_id_to_date[event_data.id] = date;
 
@@ -161,7 +160,6 @@ var SpiffCalendarBackend = function(options) {
     this.invalidate_event = function(event_data) {
         // Remove the old event from the event cache.
         var old_date = that.event_id_to_date[event_data.id];
-        console.log('invalidating', event_data, old_date);
         if (!old_date)
             return;
         delete that.event_cache[event_data.id];
@@ -178,10 +176,9 @@ var SpiffCalendarBackend = function(options) {
     };
 
     this.get_event = function(event_id) {
-        var event_data = that.event_cache[event_id];
-        if (event_data)
-            return event_data;
-        console.error('BUG: get_event called for an uncached id', event_id);
+        // Since the id is already passed, the backend should already
+        // know it.
+        return that.event_cache[event_id];
     };
 
     this.get_day_data = function(date) {
@@ -191,12 +188,11 @@ var SpiffCalendarBackend = function(options) {
     this.get_range = function(start, last, success_cb) {
         while (start <= last) {
             var key = isodate(start);
-            var day = that.day_cache[key];
-            if (day == null)
+            if (!that.day_cache.hasOwnProperty(key))
                 return settings.load_range(that, start, last, success_cb);
-            range[key] = day;
             start.setDate(start.getDate()+1);
         }
+        // Great, everything was already in the cache.
         return success_cb();
     };
 
