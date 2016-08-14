@@ -942,13 +942,11 @@ var SpiffCalendarEventDialog = function(options) {
                 return;
             }
             that._div.closeModal();
-            $('body').mousedown(); // triggers unzooming of the day
             that._serialize(settings.event_data);
             return settings.on_save(settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
             that._div.closeModal();
-            $('body').mousedown(); // triggers unzooming of the day
             return settings.on_delete(settings.event_data);
         });
     };
