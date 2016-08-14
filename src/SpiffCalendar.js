@@ -224,9 +224,9 @@ var SpiffCalendar = function(div, options) {
         footnote_renderer: function(e) { return e; },
         on_move_event: function(event_data, target_date) {
             event_data.date = target_date;
-            settings.backend.save_event(settings.backend,
-                                        event_data,
-                                        that.refresh);
+            settings.backend.save_single(settings.backend,
+                                         event_data,
+                                         that.refresh);
         },
         on_refresh: function() {}
     }, options);
