@@ -1082,9 +1082,9 @@ var SpiffCalendarEventDialog = function(options) {
             settings.event_data = $.extend(true, {}, event_data);
         this._update();
         var eventModalID = event_data.date.toString().replace(/\s+/g, '').split("00:")[0];
-	 $("#wrap").after("<div id="+eventModalID+" class='modal SpiffCalendarDialog ui-dialog-content ui-widget-content'></div>");
-	 $("#"+eventModalID+"").html(this._div);
-	 $("#"+eventModalID+"").openModal();
+        $("#wrap").after("<div id="+eventModalID+" class='modal SpiffCalendarDialog ui-dialog-content ui-widget-content'></div>");
+        $("#"+eventModalID+"").html(this._div);
+        $("#"+eventModalID+"").openModal();
 
         // Trigger validation.
         that._div.find('input').change();
