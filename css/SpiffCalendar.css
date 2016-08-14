@@ -247,18 +247,18 @@ text-align: right;
 float: left;
 }
 
-.SpiffCalendar .event .label-icon {
+.SpiffCalendar .event #label-icon {
 background-size: 11px 11px;
 background-repeat: no-repeat;
 background-position: left center;
 }
 
-.SpiffCalendar .event.recurring .label-icon {
+.SpiffCalendar .event.recurring #label-icon {
 background-image: url(../icons/recurring.svg);
 padding-left: 15px;
 }
 
-.SpiffCalendar .event.exception .label-icon {
+.SpiffCalendar .event.exception #label-icon {
 background-image: url(../icons/exception.svg);
 padding-left: 15px;
 }
