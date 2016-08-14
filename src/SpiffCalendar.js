@@ -116,6 +116,7 @@ var SpiffCalendarBackend = function(options) {
         save_event: function(backend, event_data, success_cb) {},
         delete_event: function(backend, event_data, success_cb) {},
         split_event: function(backend, split_point, event_data, success_cb) {},
+        save_single: function(backend, event_data, success_cb) {},
         delete_single: function(backend, event_data, success_cb) {},
         load_range: function(backend, start_date, end_date, success_cb) {}
     }, options);
@@ -200,8 +201,9 @@ var SpiffCalendarBackend = function(options) {
     this.add_event = settings.add_event;
     this.save_event = settings.save_event;
     this.delete_event = settings.delete_event;
-    this.delete_single = settings.delete_single;
     this.split_event = settings.split_event;
+    this.save_single = settings.save_single;
+    this.delete_single = settings.delete_single;
     this.load_range = settings.load_range;
 };
 
@@ -666,7 +668,7 @@ var SpiffCalendarEventRenderer = function(options) {
         },
         on_save: function(calendar, html, event_data) {
             var backend = calendar.settings.backend;
-            var func = event_data.id ? backend.save_event : backend.add_event;
+            var func = event_data.id ? backend.save_single : backend.add_event;
             func(backend, event_data, calendar.refresh);
         },
         on_edit_before: function(calendar, html) {},

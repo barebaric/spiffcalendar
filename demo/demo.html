@@ -42,9 +42,15 @@ $(document).ready(function() {
         split_event: function(backend, split_point, event_data, success_cb) {
             // Recurring events not implemented for this simple demo.
         },
+        save_single: function(backend, event_data, success_cb) {
+            // This only saves a single occurence of an event series.
+            console.log('save_single', event_data);
+            backend.cache_event(event_data);
+            success_cb(event_data);
+        },
         delete_single: function(backend, event_data, success_cb) {
             // This only deletes a single occurence of an event series.
-            console.log('delete_event', event_data);
+            console.log('delete_single', event_data);
             backend.invalidate_event(event_data);
             success_cb(event_data);
         },
