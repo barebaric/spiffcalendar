@@ -426,7 +426,7 @@ var SpiffCalendar = function(div, options) {
             placeholder.insertAfter(day);
 
             // Resize the day.
-            var top = day.offset().top - h/2;
+            var top = day.offset().top - h/1.3;
             var left = day.offset().left - w/2;
             h = 2.5*h;
             w = 2*w;
