@@ -176,6 +176,12 @@ var SpiffCalendarBackend = function(options) {
             day.events.splice(index, 1);
     };
 
+    this.invalidate_all = function() {
+        that.event_cache = {};
+        that.day_cache = {};
+        that.event_id_to_date = {};
+    };
+
     this.get_event = function(event_id) {
         // Since the id is already passed, the backend should already
         // know it.
