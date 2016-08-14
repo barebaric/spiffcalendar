@@ -111,7 +111,7 @@ opacity: .5;
 
 .SpiffCalendar .day.active {
 position: absolute;
-z-index: 13;
+z-index: 14;
 margin: 0;
 padding: .5em;
 }
@@ -132,7 +132,9 @@ min-height: 1.4em;
 
 .SpiffCalendar .day .footnote {
 flex: 0;
+z-index: 13;
 opacity: 0;
+background-color: white;
 font-size: .9em;
 min-height: 1.7em;
 -webkit-transition: opacity .4s;
