@@ -186,11 +186,12 @@ var SpiffCalendarBackend = function(options) {
     };
 
     this.get_range = function(start, last, success_cb) {
-        while (start <= last) {
-            var key = isodate(start);
+        var current = new Date(start.getTime());
+        while (current <= last) {
+            var key = isodate(current);
             if (!that.day_cache.hasOwnProperty(key))
-                return settings.load_range(that, start, last, success_cb);
-            start.setDate(start.getDate()+1);
+                return settings.load_range(that, current, last, success_cb);
+            current.setDate(current.getDate()+1);
         }
         // Great, everything was already in the cache.
         return success_cb();
@@ -376,12 +377,12 @@ var SpiffCalendar = function(div, options) {
         var backend = settings.backend;
         var days = that._div.find('.day');
         var range = that._get_visible_range();
-        var current = range.start;
         var last = range.last;
 
-        settings.backend.get_range(current, last, function() {
+        backend.get_range(range.start, last, function() {
             settings.on_refresh(that);
 
+            var current = new Date(range.start.getTime());
             while (current <= last) {
                 // Update general day data (footnote etc.)
                 var date = isodate(current);
