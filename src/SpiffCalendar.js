@@ -106,26 +106,142 @@ function validate_all(selector) {
 };
 
 // ======================================================================
+// Backends
+// ======================================================================
+var SpiffCalendarBackend = function(options) {
+    var that = this;
+
+    this.settings = $.extend(true, {
+        event_cache: {},
+        day_cache: {},
+        add_event: function(backend, event_data, success_cb) {},
+        save_event: function(backend, event_data, success_cb) {},
+        delete_event: function(backend, event_data, success_cb) {},
+        split_event: function(backend, split_point, event_data, success_cb) {},
+        delete_single: function(backend, event_data, success_cb) {},
+        load_range: function(backend, start_date, end_date, success_cb) {}
+    }, options);
+    var settings = this.settings;
+
+    // Initialize the cache.
+    this.event_cache = $.extend(true, {}, settings.event_cache);
+    this.day_cache = $.extend(true, {}, settings.day_cache);
+    $.each(this.event_cache, function(event) {
+        event.date = isodate(event.date);
+    });
+    $.each(this.day_cache, function(key, day) {
+        delete that.day_cache[key];
+        that.day_cache[isodate(key)] = day;
+    });
+
+    // Rest is public API.
+    this.cache_event = function(event_data) {
+        that.invalidate_event(event_data);
+
+        // Add the event to the event cache.
+        that.event_cache[event_data.id] = event_data;
+
+        // Also add it to the day cache.
+        var date = isodate(event_data.date);
+        var day = that.day_cache[date];
+        if (typeof day === "undefined")
+            day = that.day_cache[date] = {};
+        if (day.events)
+            day.events.push(event_data.id);
+        else
+            day.events = [event_data.id];
+    };
+
+    this.cache_day_data = function(date, day_data) {
+        date = isodate(date);
+        var day = that.day_cache[date];
+        if (typeof day === "undefined")
+            that.day_cache[date] = day_data;
+        else
+            $.extend(day, day_data);
+    };
+
+    this.invalidate_event = function(event_data) {
+        // Remove the old event from the event cache.
+        var old_event_data = that.event_cache[event_data.id];
+        if (!old_event_data)
+            return;
+        delete that.event_cache[event_data.id];
+
+        // Also remove it from the day cache. Since the date may have changed,
+        // we need to find the day data using the formerly cached event object.
+        var old_date = isodate(old_event_data.date);
+        var day = that.day_cache[old_date];
+        if (!day)
+            return;
+        var index = day.events.indexOf(event_data.id);
+        if (index != -1)
+            day.events.splice(index, 1);
+    };
+
+    this.get_event = function(event_id, success_cb) {
+        var event_data = that.event_cache[event_id];
+        if (event_data)
+            return success_cb($.extend({}, event_data));
+        console.error('this should not happen: get_event called for an uncached id', event_id);
+    };
+
+    this.get_range = function(start, last, success_cb) {
+        var range = {};
+        var have_all = true;
+        while (start <= last) {
+            var key = isodate(start);
+            var day = that.day_cache[key];
+            if (day == null) {
+                have_all = false;
+                break;
+            }
+            range[key] = day;
+            start.setDate(start.getDate()+1);
+        }
+        if (have_all)
+            return success_cb(range);
+        return settings.load_range(that, start, last, success_cb);
+    };
+
+    this.add_event = settings.add_event;
+    this.save_event = settings.save_event;
+    this.delete_event = settings.delete_event;
+    this.delete_single = settings.delete_single;
+    this.split_event = settings.split_event;
+    this.load_event = settings.load_event;
+    this.load_range = settings.load_range;
+};
+
+// ======================================================================
 // Calendar
 // ======================================================================
 var SpiffCalendar = function(div, options) {
     this._div = div;
     var that = this;
-    var settings = $.extend(true, {
+
+    this.settings = $.extend(true, {
         href: undefined,
         period: 'month',
         start: undefined,
         last: undefined,
-        event_api: function() { return {}; },
+        backend: new SpiffCalendarBackend(),
         event_renderer: undefined,
         footnote_renderer: function(e) { return e; },
-        on_move_event: function() {},
+        on_move_event: function(event_data, target_date) {
+            event_data.date = target_date;
+            settings.backend.save_event(settings.backend,
+                                        event_data,
+                                        that.refresh);
+        },
         on_refresh: function() {}
     }, options);
+    var settings = this.settings;
 
     if (this._div.length != 1)
         throw new Error('selector needs to match exactly one element');
     this._div.addClass('SpiffCalendar');
+    this._div.data('SpiffCalendar', this);
 
     this._calendar_event = function(event_data) {
         var html = $('<div class="event"></div>');
@@ -166,7 +282,6 @@ var SpiffCalendar = function(div, options) {
                 var event_data = ui.draggable.data('event');
                 ui.draggable.remove();
                 settings.on_move_event(event_data, $(this).data('date'));
-                $(this).find('.events').append(that._calendar_event(event_data));
             }
         });
 
@@ -267,15 +382,17 @@ var SpiffCalendar = function(div, options) {
 
     this.refresh = function() {
         var range = that._get_visible_range();
-        settings.event_api(range.start, range.last, function(data) {
+        settings.backend.get_range(range.start, range.last, function(data) {
             settings.on_refresh(that);
-            $.each(data, function(index, day_data) {
-                var date = day_data.date.replace(/-0/g, '-');
+            $.each(data, function(key, day_data) {
+                var date = key.replace(/-0/g, '-');
                 var day_div = that._div.find('.day[data-date="' + date + '"]');
                 var events = day_div.find('.events');
                 events.empty();
-                $.each(day_data.events, function(index, ev) {
-                    events.append(that._calendar_event(ev));
+                $.each(day_data.events, function(index, event_id) {
+                    settings.backend.get_event(event_id, function(event_data) {
+                        events.append(that._calendar_event(event_data));
+                    });
                 });
                 var footnote = settings.footnote_renderer(day_data.footnote);
                 day_div.find(".footnote").text(footnote);
@@ -350,7 +467,8 @@ var SpiffCalendar = function(div, options) {
         });
 
         $('body').mousedown(function(e) {
-            if ($(e.target).closest('.SpiffCalendarDialog').length)
+            if ($(e.target).closest('.SpiffCalendarDialog').length
+                    || $(e.target).closest('.ui-datepicker').length)
                 return;
             var day = $(e.target).closest('.day');
             if (day.is('.day.active'))
@@ -514,22 +632,29 @@ var SpiffCalendar = function(div, options) {
 var SpiffCalendarEventRenderer = function(options) {
     var that = this;
     var settings = $.extend(true, {
-        event_dialog: undefined,
+        event_dialog: new SpiffCalendarEventDialog(),
         render_extra_content: function() {},
         serialize_extra_content: function() {},
         deserialize_extra_content: function() {},
-        on_render: function(html, event_data) {},
-        on_save_before: function(html) {
+        on_render: function(calendar, html, event_data) {},
+        on_save_before: function(calendar, html) {
             if (!validate_all(html.find('input')))
                 return false;
         },
-        on_save: function(html, data) {},
-        on_edit_before: function(html) {},
-        on_edit: function(html, data) {
-            settings.event_dialog.show(data);
+        on_save: function(calendar, html, event_data) {
+            var backend = calendar.settings.backend;
+            var func = event_data.id ? backend.save_event : backend.add_event;
+            func(backend, event_data, calendar.refresh);
         },
-        on_delete_before: function(event_data) {},
-        on_delete: function(html, data) {},
+        on_edit_before: function(calendar, html) {},
+        on_edit: function(calendar, html, event_data) {
+            settings.event_dialog.show(calendar, event_data);
+        },
+        on_delete_before: function(calendar, event_data) {},
+        on_delete: function(calendar, html, event_data) {
+            var backend = calendar.settings.backend;
+            backend.delete_single(backend, event_data, calendar.refresh);
+        }
     }, options);
 
     this.render = function(calendar_div, html, event_data) {
@@ -608,24 +733,30 @@ var SpiffCalendarEventRenderer = function(options) {
 
         // Connect button event handlers.
         save_btn.click(function(event) {
-            if (settings.on_save_before(html) == false)
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            if (settings.on_save_before(calendar, editor) == false)
                 return;
-            that._serialize(html, event_data, true);
-            if (settings.on_save(html, event_data) != false)
-                html.removeClass('unfolded');
+            that._serialize(editor, event_data, true);
+            if (settings.on_save(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
             event.stopPropagation(); // prevent from re-opening
         });
         html.find('#button-edit').click(function(event) {
-            if (settings.on_edit_before(html) == false)
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            if (settings.on_edit_before(calendar, editor) == false)
                 return;
-            that._serialize(html, event_data, false);
-            if (settings.on_edit(html, event_data) != false)
-                html.removeClass('unfolded');
+            that._serialize(editor, event_data, false);
+            if (settings.on_edit(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
         });
         html.find('#button-delete').click(function(event) {
-            that._serialize(html, event_data, false);
-            if (settings.on_delete(html, event_data) != false)
-                html.removeClass('unfolded');
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            that._serialize(editor, event_data, false);
+            if (settings.on_delete(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
             event.stopPropagation(); // prevent from re-opening
         });
 
@@ -697,8 +828,17 @@ var SpiffCalendarEventDialog = function(options) {
         render_extra_content: function(div, event_data) {},
         serialize_extra_content: function() {},
         deserialize_extra_content: function() {},
-        on_save: function(event_data) {},
-        on_delete: function(event_data) {}
+        on_save: function(calendar, event_data) {
+            //console.log('EventDialog.on_save', event_data);
+            var backend = calendar.settings.backend;
+            var func = event_data.id ? backend.save_event : backend.add_event;
+            func(backend, event_data, calendar.refresh);
+        },
+        on_delete: function(calendar, event_data) {
+            //console.log('EventDialog.on_delete:', event_data);
+            var backend = calendar.settings.backend;
+            backend.delete_event(backend, event_data, calendar.refresh);
+        }
     }, options);
 
     this._recurring_range = function() {
@@ -943,11 +1083,13 @@ var SpiffCalendarEventDialog = function(options) {
             }
             that._div.closeModal();
             that._serialize(settings.event_data);
-            return settings.on_save(settings.event_data);
+            var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
+            return settings.on_save(calendar, settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
             that._div.closeModal();
-            return settings.on_delete(settings.event_data);
+            var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
+            return settings.on_delete(calendar, settings.event_data);
         });
     };
 
@@ -1089,12 +1231,12 @@ var SpiffCalendarEventDialog = function(options) {
         settings.deserialize_extra_content(extra, settings.event_data);
     };
 
-    this.show = function(event_data) {
+    this.show = function(calendar, event_data) {
         if (event_data)
             settings.event_data = $.extend(true, {}, event_data);
         this._update();
-        if (!that._div.closest('body').length)
-            $('body').append(that._div);
+        if (!that._div.closest('.SpiffCalendar').length)
+            calendar._div.append(that._div);
         that._div.openModal();
 
         // Trigger validation.
