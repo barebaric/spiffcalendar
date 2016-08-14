@@ -681,7 +681,7 @@ var SpiffCalendarEventRenderer = function(options) {
 // Dialog for editing event details.
 // ======================================================================
 var SpiffCalendarEventDialog = function(options) {
-    this._div = $('<div class="SpiffCalendarDialog"></div>');
+    this._div = $('<div class="SpiffCalendarDialog modal"></div>');
     var that = this;
     var settings = $.extend(true, {
         event_data: {date: new Date()},
@@ -853,7 +853,7 @@ var SpiffCalendarEventDialog = function(options) {
     this._init = function() {
         that._div.append('\
             <div class="modal-content">\
-                <h5>Event properties</h5>\
+                <h5>Repeating Events</h5>\
                 <div class="general">\
                     <input id="general-name" type="text" placeholder="Name"/>\
                     <input id="general-date" type="text" placeholder="Date"/>\
@@ -1081,10 +1081,9 @@ var SpiffCalendarEventDialog = function(options) {
         if (event_data)
             settings.event_data = $.extend(true, {}, event_data);
         this._update();
-        var eventModalID = event_data.date.toString().replace(/\s+/g, '').split("00:")[0];
-        $("#wrap").after("<div id="+eventModalID+" class='modal SpiffCalendarDialog ui-dialog-content ui-widget-content'></div>");
-        $("#"+eventModalID+"").html(this._div);
-        $("#"+eventModalID+"").openModal();
+        if (!that._div.closest('body').length)
+            $('body').append(that._div);
+        that._div.openModal();
 
         // Trigger validation.
         that._div.find('input').change();

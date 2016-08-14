@@ -1,5 +1,9 @@
 .SpiffCalendarDialog {
-border-radius: 0;
+color: #333;
+}
+
+.SpiffCalendarDialog h5 {
+margin-top: 0;
 }
 
 .SpiffCalendarDialog .general {
@@ -39,9 +43,7 @@ margin: .5em auto;
 
 .SpiffCalendarDialog input[type=text],
 .SpiffCalendarDialog input[type=number] {
-border: 1px solid #ddd;
 padding: .1em .3em;
-background-color: #fefefe;
 }
 
 .SpiffCalendarDialog input[type=number] {
