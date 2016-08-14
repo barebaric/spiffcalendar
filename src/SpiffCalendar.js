@@ -702,12 +702,6 @@ var SpiffCalendarEventRenderer = function(options) {
                         <a id="button-save" class="btn waves-effect"><i class="material-icons">done</i></a>\
                     </div>\
                 </div>');
-        html.find('.general-date').datepicker({
-            onSelect: function() {
-                this.blur();
-                $(this).change();
-            }
-        });
 
         // Define input validators for pre-defined fields.
         html.find('input').data('validator', validator_required);
@@ -725,6 +719,12 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.append(prerendered.clone(true));
         var general = html.find('#general');
+        html.find('.general-date').datepicker({
+            onSelect: function() {
+                this.blur();
+                $(this).change();
+            }
+        });
 
         // These fields are only shown on new events.
         if (!event_data.id) {
