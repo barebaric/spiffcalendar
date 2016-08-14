@@ -939,12 +939,12 @@ var SpiffCalendarEventDialog = function(options) {
                 e.stopPropagation();
                 return;
             }
-            that._div.parent().closeModal();
+            that._div.closeModal();
             that._serialize(settings.event_data);
             return settings.on_save(settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
-            that._div.parent().closeModal();
+            that._div.closeModal();
             return settings.on_delete(settings.event_data);
         });
     };
