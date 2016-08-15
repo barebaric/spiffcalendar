@@ -570,7 +570,7 @@ var SpiffCalendar = function(div, options) {
                 height: h
             });
             day.addClass('active');
-            theevent.click(); // Unfold the clicked event.
+            theevent.children(":first").click(); // Unfold the clicked event.
 
             placeholder.insertAfter(day);
 
@@ -713,8 +713,10 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.click(function() {
             html = $(this);
-            if (html.parent().is('.unfolded'))
+            var parent = html.parent();
+            if (parent.data('initialized'))
                 return;
+            parent.data('initialized', true);
 
             // Initializing the datepicker is extremely slow. By deferring the
             // initialization until the event is clicked, the refresh time for a
@@ -819,10 +821,10 @@ var SpiffCalendarEventRenderer = function(options) {
         settings.on_render(html, event_data);
 
         html.click(function() {
-            if (html.is('.unfolded'))
+            if ($(this).is('.unfolded'))
                 return;
-            html.addClass('unfolded');
-            html.find('input:first').focus();
+            $(this).addClass('unfolded');
+            $(this).find('input:first').focus();
         });
 
         html.draggable({
