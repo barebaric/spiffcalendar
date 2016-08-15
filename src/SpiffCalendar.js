@@ -842,8 +842,6 @@ var SpiffCalendarEventRenderer = function(options) {
         // Add data to the UI.
         if (event_data.time)
             html.find('#label-prefix').text(event_data.time);
-        else
-            html.find('#label-prefix').hide();
         html.find('#label-name').text(event_data.name);
         settings.on_render(html, event_data);
 
