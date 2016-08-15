@@ -423,7 +423,7 @@ var SpiffCalendar = function(div, options) {
                 // timeout to clean jQuery later.
                 var events = day_div.find('#events');
                 var event_list = events.children().detach();
-                setTimeout(function() { event_list.remove() }, 500);
+                setTimeout(event_list.remove, 500);
 
                 current.setDate(current.getDate()+1);
                 var event_ids = day_data.events;
