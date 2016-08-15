@@ -92,6 +92,7 @@ var SpiffCalendarBackend = function(options) {
         load_range: function(backend, start_date, end_date, success_cb) {}
     }, options);
     var settings = this.settings;
+    var _prefetcher = null;
 
     // These object hold the cache. event_id_to_date is needed because
     // the cache contains only references, so when the date of an
@@ -164,6 +165,18 @@ var SpiffCalendarBackend = function(options) {
     };
 
     this.get_range = function(start, last, success_cb) {
+        if (_prefetcher)
+            clearTimeout(_prefetcher);
+        prefetcher = setTimeout(function() {
+            var prefetch = new Date(last);
+            prefetch.setDate(prefetch.getDate()+42);
+            that.prefetch(last, prefetch);
+
+            var prefetch = new Date(start);
+            prefetch.setDate(prefetch.getDate()-42);
+            that.prefetch(prefetch, start);
+        }, 200);
+
         var current = new Date(start.getTime());
         while (current <= last) {
             var key = isodate(current);
@@ -173,6 +186,16 @@ var SpiffCalendarBackend = function(options) {
         }
         // Great, everything was already in the cache.
         return success_cb();
+    };
+
+    this.prefetch = function(start, last) {
+        var current = new Date(start.getTime());
+        while (current <= last) {
+            var key = isodate(current);
+            if (!that.day_cache.hasOwnProperty(key))
+                return settings.load_range(that, current, last, function() {});
+            current.setDate(current.getDate()+1);
+        }
     };
 
     this.add_event = settings.add_event;
