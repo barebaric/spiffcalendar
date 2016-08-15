@@ -23,35 +23,6 @@ var period_names = $.map(periods, function(item, index) {
           .join(' ');
 });
 
-var weekdays = ['Sunday',
-                'Monday',
-                'Tuesday',
-                'Wednesday',
-                'Thursday',
-                'Friday',
-                'Saturday'];
-
-var weekdays_short = ['Su',
-                      'Mo',
-                      'Tu',
-                      'We',
-                      'Th',
-                      'Fr',
-                      'Sa'];
-
-var months = ['January',
-              'February',
-              'March',
-              'April',
-              'May',
-              'June',
-              'July',
-              'August',
-              'September',
-              'October',
-              'November',
-              'December'];
-
 function uuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
@@ -223,6 +194,7 @@ var SpiffCalendar = function(div, options) {
     this.settings = $.extend(true, {
         href: undefined,
         period: 'month',
+        region: 'en',
         start: undefined,
         last: undefined,
         backend: new SpiffCalendarBackend(),
@@ -243,6 +215,11 @@ var SpiffCalendar = function(div, options) {
         throw new Error('selector needs to match exactly one element');
     this._div.addClass('SpiffCalendar');
     this._div.data('SpiffCalendar', this);
+
+    this.regional = $.datepicker.regional[settings.region];
+    weekdays = this.regional.dayNames;
+    weekdays_short = this.regional.dayNamesMin;
+    months = this.regional.monthNames;
 
     this._calendar_event = function(event_data) {
         var html = $('<div class="event"></div>');
@@ -867,6 +844,7 @@ var SpiffCalendarEventDialog = function(options) {
     this._div = $('<div class="SpiffCalendarDialog modal"></div>');
     var that = this;
     var settings = $.extend(true, {
+        region: 'en',
         event_data: {date: new Date()},
         render_extra_content: function(div, event_data) {},
         serialize_extra_content: function() {},
@@ -883,6 +861,9 @@ var SpiffCalendarEventDialog = function(options) {
             backend.delete_event(backend, event_data, calendar.refresh);
         }
     }, options);
+
+    this.regional = $.datepicker.regional[settings.region];
+    weekdays = this.regional.dayNames;
 
     this._recurring_range = function() {
         var html = $('\
