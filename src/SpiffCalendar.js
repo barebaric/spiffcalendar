@@ -278,7 +278,14 @@ var SpiffCalendar = function(div, options) {
             accept: function(d) {
                 return d.closest('.event').length > 0 && !d.closest('.day').is(this);
             },
-            drop: function(e, ui) {
+            over: function(event, ui) {
+                $(this).addClass('draghover');
+            },
+            out: function(event, ui) {
+                $(this).removeClass('draghover');
+            },
+            drop: function(event, ui) {
+                $(this).removeClass('draghover');
                 var event_data = ui.draggable.data('event');
                 ui.draggable.remove();
                 settings.on_move_event(event_data, $(this).data('date'));
