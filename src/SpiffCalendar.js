@@ -690,6 +690,7 @@ var SpiffCalendarEventRenderer = function(options) {
 
     this.prerender = function() {
         var html = $('\
+            <div>\
                 <div class="label">\
                     <span id="label-icon"></span>\
                     <span id="label-prefix"></span>\
@@ -707,7 +708,85 @@ var SpiffCalendarEventRenderer = function(options) {
                         <a id="button-edit" class="btn waves-effect"><i class="material-icons">repeat</i></a>\
                         <a id="button-save" class="btn waves-effect"><i class="material-icons">done</i></a>\
                     </div>\
-                </div>');
+                </div>\
+            </div>');
+
+        html.click(function() {
+            html = $(this);
+            if (html.parent().is('.unfolded'))
+                return;
+
+            // Initializing the datepicker is extremely slow. By deferring the
+            // initialization until the event is clicked, the refresh time for a
+            // single page was reduced by 200ms.
+            var datepicker = html.find('.general-date');
+            if (datepicker.is('.hasDatepicker'))
+                return;
+            var event_data = html.parent().data('event');
+            datepicker.datepicker({
+                onSelect: function() {
+                    this.blur();
+                    $(this).change();
+                }
+            }).datepicker("setDate", from_isodate(event_data.date));
+
+            // Some other things that also benefit from being deferred until
+            // clicked.
+            html.find('.general-name').val(event_data.name);
+
+            // Connect event handlers for input validation.
+            var save_btn = html.find('#button-save');
+            var inputs = html.find('#general').children();
+            inputs.keydown(function(e) {
+                $(this).removeClass('error');
+                if (e.keyCode === 13)
+                    save_btn.click();
+            });
+            inputs.bind('keyup change select', function(e) {
+                var nothidden = inputs.filter(":not([style$='display: none;'])");
+                var invalid = get_invalid_fields(nothidden);
+                save_btn.prop("disabled", invalid.length != 0);
+            });
+
+            // Connect button event handlers.
+            save_btn.click(function(event) {
+                var editor = $(this).closest('.editor').parent();
+                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+                if (settings.on_save_before(calendar, editor) == false)
+                    return;
+                that._serialize(editor, event_data, true);
+                if (settings.on_save(calendar, editor, event_data) != false)
+                    editor.removeClass('unfolded');
+                event.stopPropagation(); // prevent from re-opening
+            });
+            html.find('#button-edit').click(function(event) {
+                var editor = $(this).closest('.editor').parent();
+                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+                if (settings.on_edit_before(calendar, editor) == false)
+                    return;
+                that._serialize(editor, event_data, false);
+                if (settings.on_edit(calendar, editor, event_data) != false)
+                    editor.removeClass('unfolded');
+            });
+            html.find('#button-delete').click(function(event) {
+                var editor = $(this).closest('.editor').parent();
+                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+                that._serialize(editor, event_data, false);
+                if (settings.on_delete(calendar, editor, event_data) != false)
+                    editor.removeClass('unfolded');
+                event.stopPropagation(); // prevent from re-opening
+            });
+
+            // Trigger validation.
+            inputs.keyup();
+
+            // Extra content may be provided by the user.
+            // If the user provided settings.render_extra_content, he may
+            // also want to populate it with data.
+            var extra = html.find('#extra-content');
+            settings.render_extra_content(extra, event_data);
+            settings.deserialize_extra_content(extra, event_data);
+        });
 
         // Define input validators for pre-defined fields.
         html.find('input').data('validator', validator_required);
@@ -724,17 +803,10 @@ var SpiffCalendarEventRenderer = function(options) {
             html.addClass('exception');
 
         html.append(prerendered.clone(true));
-        var general = html.find('#general');
-        html.find('.general-date').datepicker({
-            onSelect: function() {
-                this.blur();
-                $(this).change();
-            }
-        });
 
         // These fields are only shown on new events.
         if (!event_data.id) {
-            general.find('.general-date').hide();
+            html.find('.general-date').hide();
             html.find('#button-delete').hide();
         }
 
@@ -744,61 +816,15 @@ var SpiffCalendarEventRenderer = function(options) {
         else
             html.find('#label-prefix').hide();
         html.find('#label-name').text(event_data.name);
-        general.children().eq(0).val(event_data.name);
-        general.children().eq(1).datepicker("setDate", from_isodate(event_data.date));
+        settings.on_render(html, event_data);
 
-        // Extra content may be provided by the user.
-        // If the user provided settings.render_extra_content, he may
-        // also want to populate it with data.
-        var extra = html.find('#extra-content');
-        settings.render_extra_content(extra, event_data);
-        settings.deserialize_extra_content(extra, event_data);
-
-        // Connect event handlers for input validation.
-        var save_btn = html.find('#button-save');
-        var inputs = general.children();
-        inputs.keydown(function(e) {
-            $(this).removeClass('error');
-            if (e.keyCode === 13)
-                save_btn.click();
-        });
-        inputs.bind('keyup change select', function(e) {
-            var nothidden = inputs.filter(":not([style$='display: none;'])");
-            var invalid = get_invalid_fields(nothidden);
-            save_btn.prop("disabled", invalid.length != 0);
-        });
-
-        // Connect button event handlers.
-        save_btn.click(function(event) {
-            var editor = $(this).closest('.editor').parent();
-            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-            if (settings.on_save_before(calendar, editor) == false)
+        html.click(function() {
+            if (html.is('.unfolded'))
                 return;
-            that._serialize(editor, event_data, true);
-            if (settings.on_save(calendar, editor, event_data) != false)
-                editor.removeClass('unfolded');
-            event.stopPropagation(); // prevent from re-opening
-        });
-        html.find('#button-edit').click(function(event) {
-            var editor = $(this).closest('.editor').parent();
-            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-            if (settings.on_edit_before(calendar, editor) == false)
-                return;
-            that._serialize(editor, event_data, false);
-            if (settings.on_edit(calendar, editor, event_data) != false)
-                editor.removeClass('unfolded');
-        });
-        html.find('#button-delete').click(function(event) {
-            var editor = $(this).closest('.editor').parent();
-            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-            that._serialize(editor, event_data, false);
-            if (settings.on_delete(calendar, editor, event_data) != false)
-                editor.removeClass('unfolded');
-            event.stopPropagation(); // prevent from re-opening
+            html.addClass('unfolded');
+            html.find('input:first').focus();
         });
 
-        // Trigger validation.
-        inputs.keyup();
         html.draggable({
             appendTo: calendar_div,
             helper: function(e, ui) {
@@ -815,15 +841,6 @@ var SpiffCalendarEventRenderer = function(options) {
                 $(this).show();
             }
         });
-
-        html.click(function(event) {
-            if ($(this).is('.unfolded'))
-                return;
-            $(this).addClass('unfolded');
-            $(this).find('input:first').focus();
-        });
-
-        settings.on_render(html, event_data);
     };
 
     this._serialize = function(html, event_data, include_date) {
