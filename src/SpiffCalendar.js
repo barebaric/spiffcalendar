@@ -218,7 +218,6 @@ var SpiffCalendar = function(div, options) {
 
     this.regional = $.datepicker.regional[settings.region];
     weekdays = this.regional.dayNames;
-    weekdays_short = this.regional.dayNamesMin;
     months = this.regional.monthNames;
 
     this._calendar_event = function(event_data) {
@@ -231,7 +230,7 @@ var SpiffCalendar = function(div, options) {
     this.add_event = function(event_data) {
         var date = isodate(event_data.date);
         var day = that._div.find('*[data-date="'+date+'"]:not(.placeholder)');
-        var events = day.find('.events');
+        var events = day.find('#events');
         var theevent = that._calendar_event(event_data);
         events.append(theevent);
         return theevent;
@@ -243,13 +242,13 @@ var SpiffCalendar = function(div, options) {
         }).remove();
     };
 
-    this._calendar_day = function(date) {
+    this._calendar_day = function() {
         var html = $('\
             <td class="day card hoverable">\
                 <div class="wrapper">\
-                    <div class="day_number"></div>\
-                    <div class="events"></div>\
-                    <div class="footnote center"></div>\
+                    <div id="day_number"></div>\
+                    <div id="events"></div>\
+                    <div id="footnote" class="center"></div>\
                 </div>\
             </td>');
         html.droppable({
@@ -263,33 +262,13 @@ var SpiffCalendar = function(div, options) {
             }
         });
 
-        var year = date.getFullYear();
-        var date_str = year + '-' + (date.getMonth()+1) + '-' + date.getDate();
-        html.attr('data-date', date_str);
-        html.find(".day_number").append(date.getDate());
-
-        today = new Date();
-        if (date.toDateString() == today.toDateString())
-            html.addClass("today");
-
         return html;
     };
 
-    this._calendar_week = function(range_start, range_end, date) {
+    this._calendar_week = function() {
         var html = $('<tr class="week"></tr>');
-
-        var last = new Date(date);
-        last.setDate(date.getDate() + 6);
-
-        while(date <= last){
-            var day = this._calendar_day(date);
-            if (date < range_start || date > range_end)
-                day.addClass("filler");
-            html.append(day);
-            var newDate = date.setDate(date.getDate() + 1);
-            date = new Date(newDate);
-        }
-
+        for (var f = 0; f<7; f++)
+            html.append(that._calendar_day());
         return html;
     };
 
@@ -355,30 +334,67 @@ var SpiffCalendar = function(div, options) {
         if (href.length > 1)
             var start = from_isodate(href[1]);
         that.set_range(start);
-        this._init();
+        that.refresh();
     };
+
+    var _MS_PER_DAY = 1000 * 60 * 60 * 24;
 
     this.refresh = function() {
         var backend = settings.backend;
-        var days = that._div.find('.day');
         var range = that._get_visible_range();
+        var start = range.start;
         var last = range.last;
+        var tr_list = table[0].children[0].children;
+        var today = isodate(new Date());
 
+        // Update navbar text.
+        var month_name = months[settings.start.getMonth()];
+        var year = settings.start.getFullYear();
+        that._div.find("#month").text(month_name + " " + year);
+
+        // Update events.
         backend.get_range(range.start, last, function() {
             settings.on_refresh(that);
 
             var current = new Date(range.start.getTime());
             while (current <= last) {
-                // Update general day data (footnote etc.)
+                // Find the existing day div.
                 var date = isodate(current);
-                var day_div = days.filter('[data-date="' + date + '"]');
+                var days_since_start = Math.floor((current - start) / _MS_PER_DAY);
+                var row_number = Math.floor(days_since_start / 7);
+                var col_number = days_since_start - (row_number * 7);
+                var row = tr_list[row_number+1];
+                var day_div = $(row.children[col_number]);
+                row.style.display = 'flex';
+
+                // Style the day.
+                if (current < settings.start || current > settings.last)
+                    day_div.addClass("filler");
+                else
+                    day_div.removeClass("filler");
+                if (date == today)
+                    day_div.addClass("today");
+                else
+                    day_div.removeClass("today");
+
+                // Update the day number.
+                day_div.data('date', date);
+                day_div.attr('data-date', date);
+                day_div.find("#day_number").text(current.getDate());
+
+                // Update the footnote.
                 var day_data = backend.get_day_data(date);
                 var footnote = settings.footnote_renderer(day_data.footnote);
-                day_div.find(".footnote").text(footnote);
+                day_div.find("#footnote").text(footnote);
 
-                // Update the events of that day.
-                var events = day_div.find('.events');
-                events.empty();
+                // Update the events of that day. Now jQuery's empty() is
+                // unfortunately slow, because it cleans up jQuery's internal
+                // data cache as well. So instead we use detach() with a
+                // timeout to clean jQuery later.
+                var events = day_div.find('#events');
+                var event_list = events.children().detach();
+                setTimeout(function() { event_list.remove() }, 500);
+
                 current.setDate(current.getDate()+1);
                 var event_ids = day_data.events;
                 if (!event_ids)
@@ -388,208 +404,14 @@ var SpiffCalendar = function(div, options) {
                     events.append(that._calendar_event(event_data));
                 }
             }
-        });
-    };
 
-    this._init = function() {
-        that._div.empty();
-        that._div.append('\
-            <div id="navbar">\
-                <div class="nav-buttons">\
-                    <input id="previous" type="button" class="btn hoverable" value="&lt;"/>\
-                    <input id="current" type="button" class="btn hoverable" value="&bull;"/>\
-                    <input id="next" type="button" class="btn hoverable" value="&gt;"/>\
-                    <h2 id="month"></h2>\
-                </div>\
-                <div class="range-buttons">\
-                    <input type="button"\
-                        class="btn hoverable"\
-                        value="Week"\
-                        data-target="7"/>\
-                    <input type="button"\
-                        class="btn hoverable"\
-                        value="Month"\
-                        data-target="month"/>\
-                    <input type="button"\
-                        class="btn hoverable"\
-                        value="2 Weeks"\
-                        data-target="14"/>\
-                </div>\
-            </div>\
-            <table>\
-                <tr>\
-                </tr>\
-            </table>');
-        var table = this._div.find('table');
-        $.each(weekdays_short, function(i, val) {
-            table.find("tr").append("<th>" + val + "</th>");
-        });
-
-        // Expand the range to start Sunday, end Saturday.
-        var visible = that._get_visible_range();
-
-        // Update navbar text.
-        var month_name = months[settings.start.getMonth()];
-        var year = settings.start.getFullYear();
-        this._div.find("#month").text(month_name + " " + year);
-
-        // Update the user interface.
-        var current_date = new Date(visible.start);
-        while(current_date <= visible.last) {
-            var week = this._calendar_week(settings.start,
-                                           settings.last,
-                                           current_date);
-            table.append(week);
-            var newDate = current_date.setDate(current_date.getDate() + 6);
-            current_date = new Date(newDate);
-        }
-
-        // Trigger event refresh.
-        that.refresh();
-
-        // Connect navbar button events.
-        this._div.find("#previous").click(this.previous);
-        this._div.find("#current").click(this.to_today);
-        this._div.find("#next").click(this.next);
-        this._div.find(".range-buttons input").click(function() {
-            that.set_period($(this).data('target'));
-            that.set_range(settings.start);
-            that._init();
-        });
-
-        // Unzoom the day when clicking outside of it.
-        $('body').mousedown(function(e) {
-            if ($(e.target).closest('.SpiffCalendarDialog').length
-                    || $(e.target).closest('.ui-datepicker').length)
-                return;
-            var day = $(e.target).closest('.day');
-            if (day.is('.day.active'))
-                return;
-            table.find('.day.active').each(function(index, day) {
-                $(day).animate({
-                    top: $(day).data('original_top'),
-                    left: $(day).data('original_left'),
-                    width: $(day).data('original_width'),
-                    height: $(day).data('original_height')
-                }, 100, function() {
-                    $(day).removeClass('active').css({
-                        top: 0,
-                        left: 0,
-                        width: 'auto',
-                        height: 'auto'
-                    });
-                    $(day).data('placeholder').remove();
-                });
-            });
-        });
-
-        // Fold event when clicking outside of it.
-        $('body').click(function(e) {
-            if ($(e.target).closest('.ui-datepicker').length)
-                return;
-            var theevent = $(e.target).closest('.event');
-            if (theevent.length == 0 && $(e.target).closest('.day').is('.active'))
-                return;
-            table.find('.unfolded').not(theevent).each(function() {
-                var ev = $(this);
-                ev.removeClass('unfolded');
-                var ev_data = ev.data('event');
-                if (ev_data && !ev_data.id)
-                    ev.remove();
-            });
-        });
-
-        table.find('.day').click(function(e) {
-            var day = $(e.target).closest('.day');
-            if (!day.is('.day') || day.hasClass('placeholder'))
-                return;
-
-            var is_event = ($(e.target).closest('.event').length > 0);
-            var new_editor = $(e.target).find('.unfolded').filter(function() {
-                return typeof $(this).data('event').id === 'undefined';
-            });
-            var have_new_editor = (new_editor.length > 0);
-            var date = from_isodate(day.attr('data-date'));
-
-            // Create a new event if needed.
-            if (!is_event && !have_new_editor)
-                var theevent = that.add_event({date: date});
-            else
-                var theevent = $('');
-
-            if (day.hasClass('active')) {
-                theevent.click(); // unfolds the event
-                return;
+            // There may be extra rows that do not need to be visible in this
+            // month.
+            while (++row_number <= 6) {
+                var row = tr_list[row_number+1];
+                if (row)
+                    row.style.display = 'none';
             }
-
-            // Create an exact clone of the day as a placeholder. The reason
-            // that we don't use the clone as the editor is that a) there may be
-            // events running on the original day, and b) we would have to
-            // either use clone(true), causing problems with per-event
-            // data not being copied, or re-init/re-draw the day from scratch,
-            // causing potential flickering and other headaches.
-            var placeholder = day.clone();
-            placeholder.css('visibility', 'hidden');
-            placeholder.addClass('placeholder');
-            placeholder.find('.event').removeClass('unfolded');
-
-            var w = day.width()
-            var h = day.height()
-            day.data('placeholder', placeholder);
-            day.data('original_top', day.offset().top);
-            day.data('original_left', day.offset().left);
-            day.data('original_width', w);
-            day.data('original_height', h);
-            day.css({
-                top: day.offset().top,
-                left: day.offset().left,
-                width: w,
-                height: h
-            });
-            day.addClass('active');
-            theevent.children(":first").click(); // Unfold the clicked event.
-
-            placeholder.insertAfter(day);
-
-            // Resize the day.
-            var top = day.offset().top - h/1.3;
-            var left = day.offset().left - w/2;
-            h = 2.5*h;
-            w = 2*w;
-
-            if (top < 0)
-                top = 20;
-            if (top + h > $(window).height())
-                top -= h/3;
-            if (top < 0) {
-                top = 20;
-                h = $(window).height() - 40;
-            }
-
-            if (left < 0)
-                left = 20;
-            if (left + w > $(window).width())
-                left -= w/4;
-            if (left < 0) {
-                left = 20;
-                w = $(window).width() - 40;
-            }
-
-            day.animate({
-                top: top,
-                left: left,
-                width: w,
-                height: h
-            }, 200);
-        });
-
-        this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
-            if (that._div.find('.active').length)
-                return;
-            if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0)
-                that.next();
-            else
-                that.previous();
         });
     };
 
@@ -606,12 +428,12 @@ var SpiffCalendar = function(div, options) {
                                  settings.start.getMonth(),
                                  settings.start.getDate() - settings.period);
         that.set_range(start, undefined);
-        that._init();
+        that.refresh();
     };
 
     this.to_today = function() {
         that.set_range(undefined, undefined);
-        that._init();
+        that.refresh();
     };
 
     this.next = function() {
@@ -623,14 +445,193 @@ var SpiffCalendar = function(div, options) {
                                  settings.start.getMonth(),
                                  settings.start.getDate() + settings.period);
         that.set_range(start, undefined);
-        that._init();
+        that.refresh();
     };
+
+    this._div.append('\
+        <div id="navbar">\
+            <div class="nav-buttons">\
+                <input id="previous" type="button" class="btn hoverable" value="&lt;"/>\
+                <input id="current" type="button" class="btn hoverable" value="&bull;"/>\
+                <input id="next" type="button" class="btn hoverable" value="&gt;"/>\
+                <h2 id="month"></h2>\
+            </div>\
+            <div class="range-buttons">\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="Week"\
+                    data-target="7"/>\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="Month"\
+                    data-target="month"/>\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="2 Weeks"\
+                    data-target="14"/>\
+            </div>\
+        </div>\
+        <table>\
+            <tr>\
+            </tr>\
+        </table>');
+    var table = that._div.children('table');
+    $.each(this.regional.dayNamesMin, function(i, val) {
+        table.find("tr").append("<th>" + val + "</th>");
+    });
+    for (var i=0; i<7; i++)
+        table.children().append(that._calendar_week());
+
+    // Connect navbar button events.
+    this._div.find("#previous").click(this.previous);
+    this._div.find("#current").click(this.to_today);
+    this._div.find("#next").click(this.next);
+    this._div.find(".range-buttons input").click(function() {
+        that.set_period($(this).data('target'));
+        that.set_range(settings.start);
+        that.refresh();
+    });
+
+    // Unzoom the day when clicking outside of it.
+    $('body').mousedown(function(e) {
+        if ($(e.target).closest('.SpiffCalendarDialog').length
+                || $(e.target).closest('.ui-datepicker').length)
+            return;
+        var day = $(e.target).closest('.day');
+        if (day.is('.day.active'))
+            return;
+        table.find('.day.active').each(function(index, day) {
+            $(day).animate({
+                top: $(day).data('original_top'),
+                left: $(day).data('original_left'),
+                width: $(day).data('original_width'),
+                height: $(day).data('original_height')
+            }, 100, function() {
+                $(day).removeClass('active').css({
+                    top: 0,
+                    left: 0,
+                    width: 'auto',
+                    height: 'auto'
+                });
+                $(day).data('placeholder').remove();
+            });
+        });
+    });
+
+    // Fold event when clicking outside of it.
+    $('body').click(function(e) {
+        if ($(e.target).closest('.ui-datepicker').length)
+            return;
+        var theevent = $(e.target).closest('.event');
+        if (theevent.length == 0 && $(e.target).closest('.day').is('.active'))
+            return;
+        table.find('.unfolded').not(theevent).each(function() {
+            var ev = $(this);
+            ev.removeClass('unfolded');
+            var ev_data = ev.data('event');
+            if (ev_data && !ev_data.id)
+                ev.remove();
+        });
+    });
+
+    table.click(function(e) {
+        var day = $(e.target).closest('.day');
+        if (!day.is('.day') || day.hasClass('placeholder'))
+            return;
+
+        var is_event = ($(e.target).closest('.event').length > 0);
+        var new_editor = $(e.target).find('.unfolded').filter(function() {
+            return typeof $(this).data('event').id === 'undefined';
+        });
+        var have_new_editor = (new_editor.length > 0);
+        var date = from_isodate(day.attr('data-date'));
+
+        // Create a new event if needed.
+        if (!is_event && !have_new_editor)
+            var theevent = that.add_event({date: date});
+        else
+            var theevent = $('');
+
+        if (day.hasClass('active')) {
+            theevent.click(); // unfolds the event
+            return;
+        }
+
+        // Create an exact clone of the day as a placeholder. The reason
+        // that we don't use the clone as the editor is that a) there may be
+        // events running on the original day, and b) we would have to
+        // either use clone(true), causing problems with per-event
+        // data not being copied, or re-init/re-draw the day from scratch,
+        // causing potential flickering and other headaches.
+        var placeholder = day.clone();
+        placeholder.css('visibility', 'hidden');
+        placeholder.addClass('placeholder');
+        placeholder.find('.event').removeClass('unfolded');
+
+        var w = day.width()
+        var h = day.height()
+        day.data('placeholder', placeholder);
+        day.data('original_top', day.offset().top);
+        day.data('original_left', day.offset().left);
+        day.data('original_width', w);
+        day.data('original_height', h);
+        day.css({
+            top: day.offset().top,
+            left: day.offset().left,
+            width: w,
+            height: h
+        });
+        day.addClass('active');
+        theevent.children(":first").click(); // Unfold the clicked event.
+
+        placeholder.insertAfter(day);
+
+        // Resize the day.
+        var top = day.offset().top - h/1.3;
+        var left = day.offset().left - w/2;
+        h = 2.5*h;
+        w = 2*w;
+
+        if (top < 0)
+            top = 20;
+        if (top + h > $(window).height())
+            top -= h/3;
+        if (top < 0) {
+            top = 20;
+            h = $(window).height() - 40;
+        }
+
+        if (left < 0)
+            left = 20;
+        if (left + w > $(window).width())
+            left -= w/4;
+        if (left < 0) {
+            left = 20;
+            w = $(window).width() - 40;
+        }
+
+        day.animate({
+            top: top,
+            left: left,
+            width: w,
+            height: h
+        }, 200);
+    });
+
+    this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
+        if (that._div.find('.active').length)
+            return;
+        if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0)
+            that.next();
+        else
+            that.previous();
+    });
 
     if (settings.href)
         this.href(settings.href);
     else {
         this.set_range(settings.start, settings.last);
-        this._init();
+        this.refresh();
     }
 };
 
