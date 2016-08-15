@@ -552,13 +552,27 @@ var SpiffCalendar = function(div, options) {
     $('body').click(function(e) {
         if ($(e.target).closest('.ui-datepicker').length)
             return;
-        var theevent = $(e.target).closest('.event');
-        if (theevent.length == 0 && $(e.target).closest('.day').is('.active'))
+        if ($(e.target).closest('.placeholder').length)
             return;
-        table.find('.unfolded').not(theevent).each(function() {
+
+        // Did the user click into empty space on the day?
+        var day = $(e.target).closest('.day');
+        var theevent = $(e.target).closest('.event');
+        var empty_day_clicked = !theevent.length && day.length;
+
+        // Then the user just opened a new event. Find it.
+        if (empty_day_clicked)
+            theevent = day.find('.unfolded').filter(function() {
+               return !$(this).data('event').id;
+            });
+
+        // Fold all events, except the clicked or opened one.
+        var unfolded = table.find('.unfolded').not(theevent);
+
+        // Remove all unsaved events, except the clicked or opened one.
+        unfolded.each(function() {
             var ev = $(this);
-            ev.removeClass('unfolded');
-            var ev_data = ev.data('event');
+            var ev_data = ev.removeClass('unfolded').data('event');
             if (ev_data && !ev_data.id)
                 ev.remove();
         });
@@ -569,23 +583,28 @@ var SpiffCalendar = function(div, options) {
         if (!day.is('.day') || day.hasClass('placeholder'))
             return;
 
-        var is_event = ($(e.target).closest('.event').length > 0);
-        var new_editor = $(e.target).find('.unfolded').filter(function() {
-            return typeof $(this).data('event').id === 'undefined';
-        });
-        var have_new_editor = (new_editor.length > 0);
-        var date = from_isodate(day.attr('data-date'));
-
-        // Create a new event if needed.
-        if (!is_event && !have_new_editor)
-            var theevent = that.add_event({date: date});
-        else
-            var theevent = $('');
-
-        if (day.hasClass('active')) {
-            theevent.click(); // unfolds the event
-            return;
+        var theevent = $(e.target).closest('.event');
+        if (theevent.length > 0) {
+            // Unfold the clicked event.
+            if (!theevent.hasClass('unfolded')) {
+                theevent.addClass('unfolded');
+                theevent.find('input:first').focus();
+            }
         }
+        else {
+            // Create a new event if needed.
+            var new_editor = $(e.target).find('.unfolded').filter(function() {
+                return typeof $(this).data('event').id === 'undefined';
+            });
+            if (!new_editor.length) {
+                var date = from_isodate(day.attr('data-date'));
+                theevent = that.add_event({date: date});
+                theevent.children().click(); // trigger rendering/unfold/focus
+            }
+        }
+
+        if (day.hasClass('active'))
+            return;
 
         // Create an exact clone of the day as a placeholder. The reason
         // that we don't use the clone as the editor is that a) there may be
@@ -827,13 +846,6 @@ var SpiffCalendarEventRenderer = function(options) {
             html.find('#label-prefix').hide();
         html.find('#label-name').text(event_data.name);
         settings.on_render(html, event_data);
-
-        html.click(function() {
-            if ($(this).is('.unfolded'))
-                return;
-            $(this).addClass('unfolded');
-            $(this).find('input:first').focus();
-        });
 
         html.draggable({
             appendTo: calendar_div,
