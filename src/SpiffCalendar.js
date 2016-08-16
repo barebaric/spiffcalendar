@@ -272,6 +272,7 @@ var SpiffCalendar = function(div, options) {
                     <div id="day_number"></div>\
                     <div id="events"></div>\
                     <div id="footnote" class="center"></div>\
+                    <div id="ellipsis" class="center"></div>\
                 </div>\
             </td>');
         html.droppable({
@@ -376,6 +377,7 @@ var SpiffCalendar = function(div, options) {
         var last = range.last;
         var tr_list = table[0].children[0].children;
         var today = isodate(new Date());
+        var n_weeks = Math.ceil((last - start) / _MS_PER_DAY / 7);
 
         // Update navbar text.
         var month_name = months[settings.start.getMonth()];
@@ -386,6 +388,17 @@ var SpiffCalendar = function(div, options) {
         backend.get_range(range.start, last, function() {
             settings.on_refresh(that);
 
+            // There may be extra rows that do not need to be visible in this
+            // month. We need to do this before updating each day, because it
+            // changes the height of the table cells, which needs to be known
+            // to show the ellipsis below.
+            for (i = 0; i<7; i++) {
+                var row = tr_list[i+1]; //skip header
+                if (row)
+                    row.style.display = (i<n_weeks) ? 'flex' : 'none';
+            }
+
+            // Now update each day.
             var current = new Date(range.start.getTime());
             while (current <= last) {
                 // Find the existing day div.
@@ -395,7 +408,6 @@ var SpiffCalendar = function(div, options) {
                 var col_number = days_since_start - (row_number * 7);
                 var row = tr_list[row_number+1];
                 var day_div = $(row.children[col_number]);
-                row.style.display = 'flex';
 
                 // Style the day.
                 if (current < settings.start || current > settings.last)
@@ -425,51 +437,31 @@ var SpiffCalendar = function(div, options) {
                 var event_list = events.children().detach();
                 setTimeout(event_list.remove, 500);
 
+                // Bail out if we don't have any events.
                 current.setDate(current.getDate()+1);
                 var event_ids = day_data.events;
                 if (!event_ids)
                     continue;
                 for (var i = 0, l = event_ids.length; i < l; i++) {
                     var event_data = settings.backend.get_event(event_ids[i]);
-                    events.append(that._calendar_event(event_data));
+                    var event_div = that._calendar_event(event_data);
+                    events.append(event_div);
                 }
-            }
 
-            // There may be extra rows that do not need to be visible in this
-            // month.
-            while (++row_number <= 6) {
-                var row = tr_list[row_number+1];
-                if (row)
-                    row.style.display = 'none';
+                // Show ellipsis if needed.
+                var box_obj = events[0];
+                var box_height = box_obj.clientHeight;
+                var event_height = event_div[0].offsetHeight;
+                var hidden = Math.floor(event_height*l - box_height);
+                var more = Math.ceil(hidden / event_height);
+                var ellipsis = day_div.find('#ellipsis');
+                if (more > 0)
+                    ellipsis.addClass('visible').text((more+1)+' more');
+                else
+                    ellipsis.removeClass('visible');
             }
-            //Triger the ellipsis event
-         $('.day').find('#events').each(function(index, node) {
-		        var $outer = $(this);
-		        $(this).css("overflow","hidden");
-		        // wrap all children
-		        $outer.wrapInner('<div />');
-		        var $inner = $outer.children();
-		        
-		        // get heights of them
-		        var outerHeight = $outer.height() ;
-		        var maxHeight =  outerHeight;
-		        // + .4*outerHeight;
-		        var innerHeight = $inner.height();
-		        
-		        // show ellipsis if inner block is higher than outer
-		        if (innerHeight > maxHeight) {
-		            $('<span/>', {
-		                "class": 'ellipsis',
-		                text: '…'
-		            })
-		                .appendTo($outer);
-		        }
-		    });
         });
-
     };
-
-    
 
     this.get_active_date = function() {
         return that._div.find('.day.active').data('date');
@@ -692,7 +684,6 @@ var SpiffCalendar = function(div, options) {
             width: w,
             height: h
         }, 200);
-         $(day).find('.ellipsis').css("opacity","0");
     });
 
     this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
@@ -710,6 +701,10 @@ var SpiffCalendar = function(div, options) {
         this.set_range(settings.start, settings.last);
         this.refresh();
     }
+
+    // A changed row height may mean we need to update the ellipsis that is
+    // shown when there are too many events.
+    $(window).resize(that.refresh);
 };
 
 // ======================================================================
@@ -1134,7 +1129,6 @@ var SpiffCalendarEventDialog = function(options) {
             month_html.append(val);
         });
     */
-    	
 
         var detail = that._div.find('#recurring-detail');
         detail.append(that._recurring_never());
