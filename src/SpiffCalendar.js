@@ -442,8 +442,34 @@ var SpiffCalendar = function(div, options) {
                 if (row)
                     row.style.display = 'none';
             }
+            //Triger the ellipsis event
+         $('.day').find('#events').each(function(index, node) {
+		        var $outer = $(this);
+		        $(this).css("overflow","hidden");
+		        // wrap all children
+		        $outer.wrapInner('<div />');
+		        var $inner = $outer.children();
+		        
+		        // get heights of them
+		        var outerHeight = $outer.height() ;
+		        var maxHeight =  outerHeight;
+		        // + .4*outerHeight;
+		        var innerHeight = $inner.height();
+		        
+		        // show ellipsis if inner block is higher than outer
+		        if (innerHeight > maxHeight) {
+		            $('<span/>', {
+		                "class": 'ellipsis',
+		                text: '…'
+		            })
+		                .appendTo($outer);
+		        }
+		    });
         });
+
     };
+
+    
 
     this.get_active_date = function() {
         return that._div.find('.day.active').data('date');
@@ -544,6 +570,7 @@ var SpiffCalendar = function(div, options) {
                     height: 'auto'
                 });
                 $(day).data('placeholder').remove();
+                 $(day).find('.ellipsis').css("opacity","1");
             });
         });
     });
@@ -665,6 +692,7 @@ var SpiffCalendar = function(div, options) {
             width: w,
             height: h
         }, 200);
+         $(day).find('.ellipsis').css("opacity","0");
     });
 
     this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
@@ -1106,6 +1134,7 @@ var SpiffCalendarEventDialog = function(options) {
             month_html.append(val);
         });
     */
+    	
 
         var detail = that._div.find('#recurring-detail');
         detail.append(that._recurring_never());
