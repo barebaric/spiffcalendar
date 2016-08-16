@@ -548,22 +548,20 @@ var SpiffCalendar = function(div, options) {
         var day = $(e.target).closest('.day');
         if (day.is('.day.active'))
             return;
-        table.find('.day.active').each(function(index, day) {
-            $(day).animate({
-                top: $(day).data('original_top'),
-                left: $(day).data('original_left'),
-                width: $(day).data('original_width'),
-                height: $(day).data('original_height')
-            }, 100, function() {
-                $(day).removeClass('active').css({
-                    top: 0,
-                    left: 0,
-                    width: 'auto',
-                    height: 'auto'
-                });
-                $(day).data('placeholder').remove();
-                 $(day).find('.ellipsis').css("opacity","1");
+        var day = table.find('.day.active');
+        day.animate({
+            top: day.data('original_top'),
+            left: day.data('original_left'),
+            width: day.data('original_width'),
+            height: day.data('original_height')
+        }, 100, function() {
+            day.removeClass('active').css({
+                top: 0,
+                left: 0,
+                width: 'auto',
+                height: 'auto'
             });
+            day.data('placeholder').remove();
         });
     });
 
