@@ -277,6 +277,7 @@ border-color: #f90;
 
 .SpiffCalendar .event.unfolded {
 flex: 0 1 auto;
+white-space: normal;
 background-image: none;
 background-color: white;
 border-color: #f90;
