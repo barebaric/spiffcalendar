@@ -786,10 +786,9 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.click(function() {
             html = $(this);
-            var parent = html.parent();
-            if (parent.data('initialized'))
+            if (html.data('initialized'))
                 return;
-            parent.data('initialized', true);
+            html.data('initialized', true);
 
             // Initializing the datepicker is extremely slow. By deferring the
             // initialization until the event is clicked, the refresh time for a
@@ -797,7 +796,7 @@ var SpiffCalendarEventRenderer = function(options) {
             var datepicker = html.find('.general-date');
             if (datepicker.is('.hasDatepicker'))
                 return;
-            var event_data = html.parent().data('event');
+            var event_data = html.data('event');
             datepicker.datepicker({
                 onSelect: function() {
                     this.blur();
