@@ -286,9 +286,8 @@ var SpiffCalendar = function(div, options) {
     this._div[0].removeChild(event_div);
 
     this._calendar_event = function(event_data) {
-        var html = $('<div class="event"></div>');
+        var html = render_event(that._div, event_data);
         html.data('event', event_data);
-        html.append(render_event(that._div, html, event_data));
         return html;
     };
 
@@ -764,7 +763,7 @@ var SpiffCalendarEventRenderer = function(options) {
 
     this.prerender = function() {
         var html = $('\
-            <div>\
+            <div class="event">\
                 <div class="label">\
                     <span id="label-icon"></span>\
                     <span id="label-prefix"></span>\
@@ -870,15 +869,14 @@ var SpiffCalendarEventRenderer = function(options) {
     };
     var prerendered = this.prerender();
 
-    this.render = function(calendar_div, html, event_data) {
+    this.render = function(calendar_div, event_data) {
+        html = prerendered.clone(true);
         if (event_data.time)
             html.addClass('timed');
         if (event_data.freq_type != null && event_data.freq_type !== 'ONE_TIME')
             html.addClass('recurring');
         if (event_data.is_exception)
             html.addClass('exception');
-
-        html.append(prerendered.clone(true));
 
         // These fields are only shown on new events.
         if (!event_data.id) {
@@ -908,6 +906,8 @@ var SpiffCalendarEventRenderer = function(options) {
                 $(this).show();
             }
         });
+
+        return html;
     };
 
     this._serialize = function(html, event_data, include_date) {
