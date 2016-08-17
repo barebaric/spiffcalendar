@@ -165,6 +165,7 @@ padding: 3px;
 overflow: hidden;
 margin: 1px .2em;
 border-radius: 3px;
+white-space: nowrap;
 z-index: 12;
 color: #666;
 background-color: white;
