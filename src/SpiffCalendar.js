@@ -765,10 +765,12 @@ var SpiffCalendarEventRenderer = function(options) {
         var html = $('\
             <div class="event">\
                 <div class="label">\
+                    <span id="label-left"></span>\
                     <span id="label-icon"></span>\
                     <span id="label-prefix"></span>\
                     <span id="label-name"></span>\
                     <span id="label-suffix"></span>\
+                    <span id="label-right"></span>\
                 </div>\
                 <div class="editor">\
                     <div id="general">\
