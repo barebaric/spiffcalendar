@@ -500,7 +500,7 @@ var SpiffCalendar = function(div, options) {
                 var more = Math.ceil((event_height*l - box_height) / event_height);
                 var ellipsis = day_div.find('#ellipsis');
                 if (more > 0)
-                    ellipsis.addClass('visible').text((more+1)+' more');
+                    ellipsis.addClass('visible').text(more+' more');
                 else
                     ellipsis.removeClass('visible');
             }
