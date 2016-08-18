@@ -221,6 +221,9 @@ var SpiffCalendar = function(div, options) {
         start: undefined,
         last: undefined,
         backend: new SpiffCalendarBackend(),
+        ngettext: function(singular, plural, n) {
+            return (n == 1 ? singular : plural).replace('%s', n);
+        },
         event_renderer: undefined,
         footnote_renderer: function(e) { return e; },
         on_move_event: function(event_data, target_date) {
@@ -268,6 +271,7 @@ var SpiffCalendar = function(div, options) {
     // A couple of variables that we cache for convenience and speed.
     var table = that._div.children('table');
     var settings = this.settings;
+    var ngettext = settings.ngettext;
     var backend = settings.backend;
     var render_event = settings.event_renderer.render;
     var today = new Date();
@@ -500,7 +504,7 @@ var SpiffCalendar = function(div, options) {
                 var more = Math.ceil((event_height*l - box_height) / event_height);
                 var ellipsis = day_div.find('#ellipsis');
                 if (more > 0)
-                    ellipsis.addClass('visible').text(more+' more');
+                    ellipsis.addClass('visible').text(ngettext('%s more', '%s more', more));
                 else
                     ellipsis.removeClass('visible');
             }
