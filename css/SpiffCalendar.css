@@ -303,3 +303,7 @@ display: block;
 .SpiffCalendar .day.active #ellipsis {
 display: none;
 }
+
+.SpiffCalendar input[type=number]::-webkit-inner-spin-button {
+    opacity: 1
+}
