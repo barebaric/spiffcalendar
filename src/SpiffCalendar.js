@@ -231,22 +231,63 @@ var SpiffCalendar = function(div, options) {
         },
         on_refresh: function() {}
     }, options);
-    var settings = this.settings;
-    var render_event = settings.event_renderer.render;
 
     if (this._div.length != 1)
         throw new Error('selector needs to match exactly one element');
     this._div.addClass('SpiffCalendar');
     this._div.data('SpiffCalendar', this);
 
+    this._div.append('\
+        <div id="navbar">\
+            <div class="nav-buttons">\
+                <input id="previous" type="button" class="btn hoverable" value="&lt;"/>\
+                <input id="current" type="button" class="btn hoverable" value="&bull;"/>\
+                <input id="next" type="button" class="btn hoverable" value="&gt;"/>\
+                <h2 id="month"></h2>\
+            </div>\
+            <div class="range-buttons">\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="Week"\
+                    data-target="7"/>\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="Month"\
+                    data-target="month"/>\
+                <input type="button"\
+                    class="btn hoverable"\
+                    value="2 Weeks"\
+                    data-target="14"/>\
+            </div>\
+        </div>\
+        <table>\
+            <tr>\
+            </tr>\
+        </table>');
+
+    // A couple of variables that we cache for convenience and speed.
+    var table = that._div.children('table');
+    var settings = this.settings;
+    var backend = settings.backend;
+    var render_event = settings.event_renderer.render;
+    var today = new Date();
+    var today_str = isodate(today);
     this.regional = $.datepicker.regional[settings.region];
     weekdays = this.regional.dayNames;
     months = this.regional.monthNames;
 
+    // Temporarily add an event to find its height, to cache that as well.
+    var event_div = document.createElement('div');
+    event_div.className = "event";
+    event_div.style.position = "absolute";
+    event_div.style.visibility = "hidden";
+    this._div[0].appendChild(event_div);
+    var event_height = event_div.offsetHeight;
+    this._div[0].removeChild(event_div);
+
     this._calendar_event = function(event_data) {
-        var html = $('<div class="event"></div>');
+        var html = render_event(that._div, event_data);
         html.data('event', event_data);
-        html.append(render_event(that._div, html, event_data));
         return html;
     };
 
@@ -272,6 +313,7 @@ var SpiffCalendar = function(div, options) {
                     <div id="day_number"></div>\
                     <div id="events"></div>\
                     <div id="footnote" class="center"></div>\
+                    <div id="ellipsis" class="center"></div>\
                 </div>\
             </td>');
         html.droppable({
@@ -313,7 +355,6 @@ var SpiffCalendar = function(div, options) {
         // Defines the days that the user wants to see. The actual visible
         // range may differ: This range may later be expanded to begin at the
         // a Sunday, for example.
-        var today = new Date();
         if (typeof start === "undefined")
             start = new Date(today.getFullYear(),
                              today.getMonth(),
@@ -367,26 +408,46 @@ var SpiffCalendar = function(div, options) {
         that.refresh();
     };
 
+    this._hide_unneeded_cells = function() {
+        var tr_list = table[0].children[0].children;
+        var range = that._get_visible_range();
+        var n_weeks = Math.ceil((range.last - range.start) / _MS_PER_DAY / 7);
+        for (i = 0; i<7; i++) {
+            var row = tr_list[i+1]; //skip header
+            if (row)
+                row.style.display = (i<n_weeks) ? 'flex' : 'none';
+        }
+    };
+
     var _MS_PER_DAY = 1000 * 60 * 60 * 24;
 
     this.refresh = function() {
-        var backend = settings.backend;
         var range = that._get_visible_range();
         var start = range.start;
         var last = range.last;
-        var tr_list = table[0].children[0].children;
-        var today = isodate(new Date());
 
         // Update navbar text.
         var month_name = months[settings.start.getMonth()];
         var year = settings.start.getFullYear();
         that._div.find("#month").text(month_name + " " + year);
 
+        // There may be extra rows that do not need to be visible in this
+        // month. We need to do this before updating each day, because it
+        // changes the height of the table cells, which needs to be known
+        // to show the ellipsis below.
+        var n_weeks = Math.ceil((last - start) / _MS_PER_DAY / 7);
+        for (i = 0; i<7; i++) {
+            var row = tr_list[i+1]; //skip header
+            if (row)
+                row.style.display = (i<n_weeks) ? 'flex' : 'none';
+        }
+
         // Update events.
         backend.get_range(range.start, last, function() {
             settings.on_refresh(that);
 
-            var current = new Date(range.start.getTime());
+            // Now update each day.
+            var current = new Date(range.start);
             while (current <= last) {
                 // Find the existing day div.
                 var date = isodate(current);
@@ -395,14 +456,13 @@ var SpiffCalendar = function(div, options) {
                 var col_number = days_since_start - (row_number * 7);
                 var row = tr_list[row_number+1];
                 var day_div = $(row.children[col_number]);
-                row.style.display = 'flex';
 
                 // Style the day.
                 if (current < settings.start || current > settings.last)
                     day_div.addClass("filler");
                 else
                     day_div.removeClass("filler");
-                if (date == today)
+                if (date == today_str)
                     day_div.addClass("today");
                 else
                     day_div.removeClass("today");
@@ -425,51 +485,27 @@ var SpiffCalendar = function(div, options) {
                 var event_list = events.children().detach();
                 setTimeout(event_list.remove, 500);
 
+                // Bail out if we don't have any events.
                 current.setDate(current.getDate()+1);
                 var event_ids = day_data.events;
                 if (!event_ids)
                     continue;
                 for (var i = 0, l = event_ids.length; i < l; i++) {
                     var event_data = settings.backend.get_event(event_ids[i]);
-                    events.append(that._calendar_event(event_data));
+                    var event_div = that._calendar_event(event_data);
+                    events.append(event_div);
                 }
-            }
 
-            // There may be extra rows that do not need to be visible in this
-            // month.
-            while (++row_number <= 6) {
-                var row = tr_list[row_number+1];
-                if (row)
-                    row.style.display = 'none';
+                // Show ellipsis if needed.
+                var more = Math.ceil((event_height*l - box_height) / event_height);
+                var ellipsis = day_div.find('#ellipsis');
+                if (more > 0)
+                    ellipsis.addClass('visible').text(more+' more');
+                else
+                    ellipsis.removeClass('visible');
             }
-            //Triger the ellipsis event
-         $('.day').find('#events').each(function(index, node) {
-		        var $outer = $(this);
-		        $(this).css("overflow","hidden");
-		        // wrap all children
-		        $outer.wrapInner('<div />');
-		        var $inner = $outer.children();
-		        
-		        // get heights of them
-		        var outerHeight = $outer.height() ;
-		        var maxHeight =  outerHeight;
-		        // + .4*outerHeight;
-		        var innerHeight = $inner.height();
-		        
-		        // show ellipsis if inner block is higher than outer
-		        if (innerHeight > maxHeight) {
-		            $('<span/>', {
-		                "class": 'ellipsis',
-		                text: '…'
-		            })
-		                .appendTo($outer);
-		        }
-		    });
         });
-
     };
-
-    
 
     this.get_active_date = function() {
         return that._div.find('.day.active').data('date');
@@ -504,39 +540,13 @@ var SpiffCalendar = function(div, options) {
         that.refresh();
     };
 
-    this._div.append('\
-        <div id="navbar">\
-            <div class="nav-buttons">\
-                <input id="previous" type="button" class="btn hoverable" value="&lt;"/>\
-                <input id="current" type="button" class="btn hoverable" value="&bull;"/>\
-                <input id="next" type="button" class="btn hoverable" value="&gt;"/>\
-                <h2 id="month"></h2>\
-            </div>\
-            <div class="range-buttons">\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="Week"\
-                    data-target="7"/>\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="Month"\
-                    data-target="month"/>\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="2 Weeks"\
-                    data-target="14"/>\
-            </div>\
-        </div>\
-        <table>\
-            <tr>\
-            </tr>\
-        </table>');
-    var table = that._div.children('table');
+    // Add calendar table header and cells.
     $.each(this.regional.dayNamesMin, function(i, val) {
         table.find("tr").append("<th>" + val + "</th>");
     });
     for (var i=0; i<7; i++)
         table.children().append(that._calendar_week());
+    var tr_list = table[0].children[0].children;
 
     // Connect navbar button events.
     this._div.find("#previous").click(this.previous);
@@ -556,22 +566,20 @@ var SpiffCalendar = function(div, options) {
         var day = $(e.target).closest('.day');
         if (day.is('.day.active'))
             return;
-        table.find('.day.active').each(function(index, day) {
-            $(day).animate({
-                top: $(day).data('original_top'),
-                left: $(day).data('original_left'),
-                width: $(day).data('original_width'),
-                height: $(day).data('original_height')
-            }, 100, function() {
-                $(day).removeClass('active').css({
-                    top: 0,
-                    left: 0,
-                    width: 'auto',
-                    height: 'auto'
-                });
-                $(day).data('placeholder').remove();
-                 $(day).find('.ellipsis').css("opacity","1");
+        var day = table.find('.day.active');
+        day.animate({
+            top: day.data('original_top'),
+            left: day.data('original_left'),
+            width: day.data('original_width'),
+            height: day.data('original_height')
+        }, 100, function() {
+            day.removeClass('active').css({
+                top: 0,
+                left: 0,
+                width: 'auto',
+                height: 'auto'
             });
+            day.data('placeholder').remove();
         });
     });
 
@@ -692,7 +700,6 @@ var SpiffCalendar = function(div, options) {
             width: w,
             height: h
         }, 200);
-         $(day).find('.ellipsis').css("opacity","0");
     });
 
     this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
@@ -706,10 +713,21 @@ var SpiffCalendar = function(div, options) {
 
     if (settings.href)
         this.href(settings.href);
-    else {
+    else
         this.set_range(settings.start, settings.last);
-        this.refresh();
-    }
+
+    // Calculate the box size only once, becaus clentHeight causes a reflow.
+    that._hide_unneeded_cells();
+    var box_obj = table.find('tr:nth-child(2) .day:first #events')[0];
+    var box_height;
+
+    // A changed row height may mean we need to update the ellipsis that is
+    // shown when there are too many events.
+    $(window).resize(function() {
+        box_height = box_obj.clientHeight;
+        that.refresh();
+    });
+    $(window).resize();
 };
 
 // ======================================================================
@@ -745,12 +763,14 @@ var SpiffCalendarEventRenderer = function(options) {
 
     this.prerender = function() {
         var html = $('\
-            <div>\
+            <div class="event">\
                 <div class="label">\
+                    <span id="label-left"></span>\
                     <span id="label-icon"></span>\
                     <span id="label-prefix"></span>\
                     <span id="label-name"></span>\
                     <span id="label-suffix"></span>\
+                    <span id="label-right"></span>\
                 </div>\
                 <div class="editor">\
                     <div id="general">\
@@ -768,10 +788,9 @@ var SpiffCalendarEventRenderer = function(options) {
 
         html.click(function() {
             html = $(this);
-            var parent = html.parent();
-            if (parent.data('initialized'))
+            if (html.data('initialized'))
                 return;
-            parent.data('initialized', true);
+            html.data('initialized', true);
 
             // Initializing the datepicker is extremely slow. By deferring the
             // initialization until the event is clicked, the refresh time for a
@@ -779,7 +798,7 @@ var SpiffCalendarEventRenderer = function(options) {
             var datepicker = html.find('.general-date');
             if (datepicker.is('.hasDatepicker'))
                 return;
-            var event_data = html.parent().data('event');
+            var event_data = html.data('event');
             datepicker.datepicker({
                 onSelect: function() {
                     this.blur();
@@ -851,15 +870,14 @@ var SpiffCalendarEventRenderer = function(options) {
     };
     var prerendered = this.prerender();
 
-    this.render = function(calendar_div, html, event_data) {
+    this.render = function(calendar_div, event_data) {
+        html = prerendered.clone(true);
         if (event_data.time)
             html.addClass('timed');
         if (event_data.freq_type != null && event_data.freq_type !== 'ONE_TIME')
             html.addClass('recurring');
         if (event_data.is_exception)
             html.addClass('exception');
-
-        html.append(prerendered.clone(true));
 
         // These fields are only shown on new events.
         if (!event_data.id) {
@@ -889,6 +907,8 @@ var SpiffCalendarEventRenderer = function(options) {
                 $(this).show();
             }
         });
+
+        return html;
     };
 
     this._serialize = function(html, event_data, include_date) {
@@ -1134,7 +1154,6 @@ var SpiffCalendarEventDialog = function(options) {
             month_html.append(val);
         });
     */
-    	
 
         var detail = that._div.find('#recurring-detail');
         detail.append(that._recurring_never());

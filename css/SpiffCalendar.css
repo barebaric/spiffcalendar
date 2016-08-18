@@ -135,7 +135,9 @@ min-height: 1.4em;
 }
 
 .SpiffCalendar .day #footnote {
-flex: 0;
+position: absolute;
+bottom: 0;
+width: 100%;
 z-index: 13;
 opacity: 0;
 background-color: white;
@@ -163,6 +165,7 @@ padding: 3px;
 overflow: hidden;
 margin: 1px .2em;
 border-radius: 3px;
+white-space: nowrap;
 z-index: 12;
 color: #666;
 background-color: white;
@@ -274,16 +277,29 @@ border-color: #f90;
 
 .SpiffCalendar .event.unfolded {
 flex: 0 1 auto;
+white-space: normal;
 background-image: none;
 background-color: white;
 border-color: #f90;
 margin-bottom: .4em;
 }
 
-.ellipsis{
-	width:100%;
-	position:absolute;
-	bottom:0px;
-	font-size:40px;
-	text-align:center;
+.SpiffCalendar #ellipsis {
+width:100%;
+display: none;
+position:absolute;
+bottom:0px;
+text-align:center;
+height: 1.4em;
+z-index: 12;
+background-color: white;
+font-size: .9em;
+}
+
+.SpiffCalendar #ellipsis.visible {
+display: block;
+}
+
+.SpiffCalendar .day.active #ellipsis {
+display: none;
 }
