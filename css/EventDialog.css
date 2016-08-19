@@ -1,8 +1,28 @@
 .SpiffCalendarDialog {
+background: #fefefe;
 color: #333;
+box-shadow: 0 8px 15px rgba(0, 0, 0, .3);
+-webkit-transition: box-shadow .2s;
+-moz-transition: box-shadow .2s;
+-o-transition: box-shadow .2s;
+transition: box-shadow .2s;
 }
 
-.SpiffCalendarDialog h5 {
+.SpiffCalendarDialog:hover {
+background: #fefefe;
+color: #333;
+box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
+-webkit-transition: box-shadow .2s;
+-moz-transition: box-shadow .2s;
+-o-transition: box-shadow .2s;
+transition: box-shadow .2s;
+}
+
+.SpiffCalendarDialog .ui-dialog-titlebar {
+display: none;
+}
+
+.SpiffCalendarDialog h2 {
 margin-top: 0;
 }
 
@@ -39,11 +59,6 @@ background-color: #9c9;
 
 .SpiffCalendarDialog #recurring-period {
 margin: .5em auto;
-}
-
-.SpiffCalendarDialog input[type=text],
-.SpiffCalendarDialog input[type=number] {
-padding: .1em .3em;
 }
 
 .SpiffCalendarDialog input[type=number] {

@@ -15,7 +15,7 @@ flex-direction: column;
 .SpiffCalendar #navbar {
 flex: 0 1 auto;
 background: #eee;
-padding: 0 6px;
+padding: 0 1em;
 color: #666;
 }
 
@@ -30,12 +30,12 @@ white-space: nowrap;
 }
 
 .SpiffCalendar #navbar h2 {
-display: inline-block;
+display: inline;
+line-height: 2em;
 font-size: 1.6em;
 text-transform: uppercase;
-padding: 0 .5rem;
-margin: 0.2rem;
-line-height: 36px;
+padding: 0 1em;
+margin: 0;
 vertical-align: middle;
 }
 
@@ -99,6 +99,17 @@ overflow: hidden;
 position: relative;
 padding: 0;
 margin: 3px;
+background-color: #fefefe;
+box-shadow: 0 2px 3px rgba(0, 0, 0, .3);
+-webkit-transition: box-shadow .2s;
+-moz-transition: box-shadow .2s;
+-o-transition: box-shadow .2s;
+transition: box-shadow .2s;
+}
+
+.SpiffCalendar .day:hover {
+z-index: 2;
+box-shadow: 0 6px 12px rgba(0, 0, 0, .3);
 }
 
 .SpiffCalendar .day.today {
@@ -210,22 +221,7 @@ height: 1rem;
 }
 
 .SpiffCalendar .event input {
-background-color: transparent;
-border-radius: 2px;
-border: none;
-height: auto;
-padding: .3em;
-margin: .2em 0;
-border-bottom: 1px solid grey;
--webkit-box-sizing: border-box;
--moz-box-sizing: border-box;
-box-sizing: border-box;
-}
-
-.SpiffCalendar .event input.error {
-background-color: #f66;
-border: 1px solid red;
-color: black;
+width: 100%;
 }
 
 .SpiffCalendar .event .editor {
@@ -302,8 +298,4 @@ display: block;
 
 .SpiffCalendar .day.active #ellipsis {
 display: none;
-}
-
-.SpiffCalendar input[type=number]::-webkit-inner-spin-button {
-    opacity: 1
 }

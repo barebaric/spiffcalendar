@@ -252,24 +252,21 @@ var SpiffCalendar = function(div, options) {
     this._div.append('\
         <div id="navbar">\
             <div class="nav-buttons">\
-                <input id="previous" type="button" class="btn hoverable" value="&lt;"/>\
-                <input id="current" type="button" class="btn hoverable" value="&bull;"/>\
-                <input id="next" type="button" class="btn hoverable" value="&gt;"/>\
+                <a id="previous" class="btn" value="&lt;"><i class="material-icons">navigate_before</i></a>\
+                <a id="current" class="btn" value="&bull;"><i class="material-icons">today</i></a>\
+                <a id="next" class="btn" value="&gt;"><i class="material-icons">navigate_next</i></a>\
                 <h2 id="month"></h2>\
             </div>\
             <div class="range-buttons">\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="Week"\
-                    data-target="7"/>\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="Month"\
-                    data-target="month"/>\
-                <input type="button"\
-                    class="btn hoverable"\
-                    value="2 Weeks"\
-                    data-target="14"/>\
+                <a class="btn" value="Week" data-target="7">\
+                    <i class="material-icons">view_week</i>\
+                </a>\
+                <a class="btn" value="2 Weeks" data-target="14">\
+                    <i class="material-icons">view_module</i>\
+                </a>\
+                <a class="btn" value="Month" data-target="month">\
+                    <i class="material-icons">view_comfy</i>\
+                </a>\
             </div>\
         </div>\
         <table>\
@@ -564,7 +561,7 @@ var SpiffCalendar = function(div, options) {
     this._div.find("#previous").click(this.previous);
     this._div.find("#current").click(this.to_today);
     this._div.find("#next").click(this.next);
-    this._div.find(".range-buttons input").click(function() {
+    this._div.find(".range-buttons a").click(function() {
         that.set_period($(this).data('target'));
         that.set_range(settings.start);
         that.refresh();
@@ -791,9 +788,9 @@ var SpiffCalendarEventRenderer = function(options) {
                     </div>\
                     <div id="extra-content"></div>\
                     <div id="event-buttons">\
-                        <a id="button-delete" class="btn waves-effect red"><i class="material-icons">delete</i></a>\
-                        <a id="button-edit" class="btn waves-effect"><i class="material-icons">repeat</i></a>\
-                        <a id="button-save" class="btn waves-effect"><i class="material-icons">done</i></a>\
+                        <a id="button-delete" class="btn"><i class="material-icons">delete</i></a>\
+                        <a id="button-edit" class="btn"><i class="material-icons">repeat</i></a>\
+                        <a id="button-save" class="btn"><i class="material-icons">done</i></a>\
                     </div>\
                 </div>\
             </div>');
@@ -942,7 +939,7 @@ var SpiffCalendarEventRenderer = function(options) {
 // Dialog for editing event details.
 // ======================================================================
 var SpiffCalendarEventDialog = function(options) {
-    this._div = $('<div class="SpiffCalendarDialog modal"></div>');
+    this._div = $('<div></div>');
     var that = this;
     var settings = $.extend(true, {
         region: 'en',
@@ -1024,7 +1021,7 @@ var SpiffCalendarEventDialog = function(options) {
 
         // Day selector.
         $.each(weekdays, function(i, val) {
-            var day_html = $('<input type="checkbox" name="day"/><label></label>');
+            var day_html = $('<label><input type="checkbox" name="day"/></label>');
             var input_id = uuid();
             day_html.filter('input').data('value', Math.pow(2, (i == 0) ? 6 : (i-1)));
             day_html.filter('input').prop('id', input_id);
@@ -1129,8 +1126,8 @@ var SpiffCalendarEventDialog = function(options) {
 
     this._init = function() {
         that._div.append('\
-            <div class="modal-content">\
-                <h5>'+gettext("Repeating Events")+'</h5>\
+            <div>\
+                <h2>'+gettext("Repeating Events")+'</h2>\
                 <div class="general">\
                     <input id="general-name" type="text" placeholder="'+gettext("Name")+'"/>\
                     <input id="general-date" type="text" placeholder="'+gettext("Date")+'"/>\
@@ -1206,13 +1203,13 @@ var SpiffCalendarEventDialog = function(options) {
                 e.stopPropagation();
                 return;
             }
-            that._div.closeModal();
+            that._div.dialog('close');
             that._serialize(settings.event_data);
             var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
             return settings.on_save(calendar, settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
-            that._div.closeModal();
+            that._div.dialog('close');
             var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
             return settings.on_delete(calendar, settings.event_data);
         });
@@ -1360,17 +1357,34 @@ var SpiffCalendarEventDialog = function(options) {
         if (event_data)
             settings.event_data = $.extend(true, {}, event_data);
         this._update();
-        if (!that._div.closest('.SpiffCalendar').length)
-            calendar._div.append(that._div);
-        that._div.openModal();
-
-        // Trigger validation.
-        that._div.find('input').change();
+        this._div.dialog('open');
+        that._div.addClass('opening');
+        that._div.find('input').change(); // Trigger validation.
     };
 
     this.hide = function() {
-        this._div.hide();
+        this._div.dialog('close');
     };
+
+    that._div.dialog({
+        autoOpen: false,
+        dialogClass: 'SpiffCalendarDialog',
+        width: $(window).width()*.7,
+        minWidth: 650,
+    });
+
+    $('body').click(function(e) {
+        console.log('click', e.target);
+        if (!that._div.dialog('instance'))
+            return;
+        if ($(e.target).closest('.SpiffCalendarDialog').length)
+            return;
+        console.log('clicked outside', that._div.hasClass('opening'));
+        if (!that._div.hasClass('opening'))
+            that._div.dialog('close');
+        that._div.removeClass('opening');
+        console.log('removed class', that._div.hasClass('opening'));
+    });
 
     this._init();
     this._update();
