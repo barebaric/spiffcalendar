@@ -108,7 +108,6 @@ transition: box-shadow .2s;
 }
 
 .SpiffCalendar .day:hover {
-z-index: 2;
 box-shadow: 0 6px 12px rgba(0, 0, 0, .3);
 }
 
@@ -154,6 +153,7 @@ opacity: 0;
 background-color: white;
 font-size: .9em;
 min-height: 1.7em;
+text-align: center;
 -webkit-transition: opacity .4s;
 -moz-transition: opacity .4s;
 -o-transition: opacity .4s;
