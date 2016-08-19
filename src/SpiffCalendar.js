@@ -1205,12 +1205,12 @@ var SpiffCalendarEventDialog = function(options) {
             }
             that._div.dialog('close');
             that._serialize(settings.event_data);
-            var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
+            var calendar = that._div.data('SpiffCalendar');
             return settings.on_save(calendar, settings.event_data);
         });
         that._div.find('#button-delete').click(function(e) {
             that._div.dialog('close');
-            var calendar = $(this).closest('.SpiffCalendar').data('SpiffCalendar');
+            var calendar = that._div.data('SpiffCalendar');
             return settings.on_delete(calendar, settings.event_data);
         });
     };
@@ -1356,8 +1356,9 @@ var SpiffCalendarEventDialog = function(options) {
     this.show = function(calendar, event_data) {
         if (event_data)
             settings.event_data = $.extend(true, {}, event_data);
-        this._update();
-        this._div.dialog('open');
+        that._update();
+        that._div.data('SpiffCalendar', calendar);
+        that._div.dialog('open');
         that._div.addClass('opening');
         that._div.find('input').change(); // Trigger validation.
     };
