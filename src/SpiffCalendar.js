@@ -318,12 +318,10 @@ var SpiffCalendar = function(div, options) {
     this._calendar_day = function() {
         var html = $('\
             <td class="day">\
-                <div class="wrapper">\
-                    <div id="day_number"></div>\
-                    <div id="events"></div>\
-                    <div id="footnote" class="center"></div>\
-                    <div id="ellipsis" class="center"></div>\
-                </div>\
+                <div id="day_number"></div>\
+                <div id="events"></div>\
+                <div id="footnote" class="center"></div>\
+                <div id="ellipsis" class="center"></div>\
             </td>');
         html.droppable({
             accept: function(d) {
