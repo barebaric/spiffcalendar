@@ -1374,16 +1374,13 @@ var SpiffCalendarEventDialog = function(options) {
     });
 
     $('body').click(function(e) {
-        console.log('click', e.target);
         if (!that._div.dialog('instance'))
             return;
         if ($(e.target).closest('.SpiffCalendarDialog').length)
             return;
-        console.log('clicked outside', that._div.hasClass('opening'));
         if (!that._div.hasClass('opening'))
             that._div.dialog('close');
         that._div.removeClass('opening');
-        console.log('removed class', that._div.hasClass('opening'));
     });
 
     this._init();
