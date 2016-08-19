@@ -76,13 +76,13 @@ function validate_all(selector) {
     return invalid.length == 0;
 };
 
-if (!gettext) {
+if (typeof gettext === 'undefined') {
     function gettext(str) {
         return str;
     }
 }
 
-if (!ngettext) {
+if (typeof ngettext === 'undefined') {
     function ngettext(singular, plural, n) {
         return (n == 1 ? singular : plural).replace('%s', n);
     }
