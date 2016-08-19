@@ -1,26 +1,60 @@
 input[type=text],
 input[type=number] {
+display: inline-block;
+width: 100%;
 background-color: transparent;
 border: none;
-border-bottom: 2px solid lightgrey;
-outline: 0;
+border-bottom: 1px solid lightgrey;
+margin: .5em 0 .3em 0;
 line-height: 2rem;
-margin: .2em 0;
-padding: .1em .3em;
--webkit-transition: border-bottom .4s;
--moz-transition: border-bottom .4s;
--o-transition: border-bottom .4s;
-transition: border-bottom .4s;
+padding: .3em .3em;
+-webkit-transition: all 0.4s cubic-bezier(0.64, 0.09, 0.08, 1);
+-moz-transition: all 0.4s cubic-bezier(0.64, 0.09, 0.08, 1);
+-o-transition: all 0.4s cubic-bezier(0.64, 0.09, 0.08, 1);
+transition: all 0.4s cubic-bezier(0.64, 0.09, 0.08, 1);
+background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 96%, #1abc9c 4%);
+background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 96%, #1abc9c 4%);
+background-position: -100vh 0;
+background-size: 100vh 100%;
+background-repeat: no-repeat;
 }
 
 input[type=text]:focus,
-input[type=number]:focus {
-border-bottom: 2px solid grey;
+input[type=text]:valid,
+input[type=number]:focus,
+input[type=number]:valid {
+background-position: 0 0;
+box-shadow: none;
+outline: none;
+}
+
+input[type=text]:invalid,
+input[type=number]:invalid {
+box-shadow: none;
+outline: none;
 }
 
 input[type=text].error,
 input[type=number].error {
-border-bottom: 2px solid red;
+background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 96%, red 4%);
+background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 96%, red 4%);
+}
+
+input[type=text]::-webkit-input-placeholder,
+input[type=number]::-webkit-input-placeholder {
+-webkit-transition: all 0.3s ease-in-out;
+transition: all 0.3s ease-in-out;
+}
+
+input[type=text]:focus::-webkit-input-placeholder,
+input[type=text]:valid::-webkit-input-placeholder,
+input[type=number]:focus::-webkit-input-placeholder,
+input[type=number]:valid::-webkit-input-placeholder {
+color: #1abc9c;
+font-size: 11px;
+-webkit-transform: translateY(-20px);
+transform: translateY(-20px);
+visibility: visible !important;
 }
 
 input[type=checkbox] {
