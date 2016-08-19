@@ -317,7 +317,7 @@ var SpiffCalendar = function(div, options) {
 
     this._calendar_day = function() {
         var html = $('\
-            <td class="day card hoverable">\
+            <td class="day">\
                 <div class="wrapper">\
                     <div id="day_number"></div>\
                     <div id="events"></div>\
