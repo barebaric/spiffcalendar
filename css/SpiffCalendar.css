@@ -95,8 +95,6 @@ padding: 1em;
 }
 
 .SpiffCalendar .day {
-display: flex;
-flex-direction: column;
 overflow: hidden;
 position: relative;
 padding: 0;
@@ -130,6 +128,12 @@ padding: .5em;
 
 .SpiffCalendar .day.draghover {
 box-shadow: 0 5px 6px rgba(0, 0, 0, .3);
+}
+
+.SpiffCalendar .day .wrapper {
+display: flex;
+flex-direction: column;
+width: 100%;
 }
 
 .SpiffCalendar .day #day_number {
