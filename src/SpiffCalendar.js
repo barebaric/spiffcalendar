@@ -800,13 +800,13 @@ var SpiffCalendarEventRenderer = function(options) {
                     </div>\
                     <div id="extra-content"></div>\
                     <div id="event-buttons">\
-                        <button id="button-delete" class="material link">\
+                        <button id="button-delete" class="material link small">\
                             <i class="material-icons">delete</i>\
                         </a>\
-                        <button id="button-edit" class="material">\
+                        <button id="button-edit" class="material small">\
                             <i class="material-icons">repeat</i>\
                         </a>\
-                        <button id="button-save" class="material">\
+                        <button id="button-save" class="material small">\
                             <i class="material-icons">done</i>\
                         </a>\
                     </div>\
@@ -1157,7 +1157,6 @@ var SpiffCalendarEventDialog = function(options) {
     this._init = function() {
         that._div.append('\
             <div>\
-                <h2>'+gettext("Repeating Events")+'</h2>\
                 <div class="general">\
                     <input id="general-name"\
                         class="material"\
@@ -1407,7 +1406,8 @@ var SpiffCalendarEventDialog = function(options) {
 
     that._div.dialog({
         autoOpen: false,
-        dialogClass: 'SpiffCalendarDialog',
+        title: gettext("Repeating Events"),
+        dialogClass: 'SpiffCalendarDialog material',
         width: $('body').width()*.7,
         minWidth: 650,
     });
