@@ -252,19 +252,25 @@ var SpiffCalendar = function(div, options) {
     this._div.append('\
         <div id="navbar">\
             <div class="nav-buttons">\
-                <a id="previous" class="btn" value="&lt;"><i class="material-icons">navigate_before</i></a>\
-                <a id="current" class="btn" value="&bull;"><i class="material-icons">today</i></a>\
-                <a id="next" class="btn" value="&gt;"><i class="material-icons">navigate_next</i></a>\
+                <a id="previous" class="material" value="&lt;">\
+                    <i class="material-icons">navigate_before</i>\
+                </a>\
+                <a id="current" class="material" value="&bull;">\
+                    <i class="material-icons">today</i>\
+                </a>\
+                <a id="next" class="material" value="&gt;">\
+                    <i class="material-icons">navigate_next</i>\
+                </a>\
                 <h2 id="month"></h2>\
             </div>\
             <div class="range-buttons">\
-                <a class="btn" value="Week" data-target="7">\
+                <a class="material" value="Week" data-target="7">\
                     <i class="material-icons">view_week</i>\
                 </a>\
-                <a class="btn" value="2 Weeks" data-target="14">\
+                <a class="material" value="2 Weeks" data-target="14">\
                     <i class="material-icons">view_module</i>\
                 </a>\
-                <a class="btn" value="Month" data-target="month">\
+                <a class="material" value="Month" data-target="month">\
                     <i class="material-icons">view_comfy</i>\
                 </a>\
             </div>\
@@ -783,14 +789,26 @@ var SpiffCalendarEventRenderer = function(options) {
                 </div>\
                 <div class="editor">\
                     <div id="general">\
-                        <input class="general-name" type="text" placeholder="'+gettext("Event")+'" required/>\
-                        <input class="general-date" type="text" placeholder="'+gettext("Date")+'" required/>\
+                        <input class="general-name material"\
+                            type="text"\
+                            placeholder="'+gettext("Event")+'"\
+                            required/>\
+                        <input class="general-date material"\
+                            type="text"\
+                            placeholder="'+gettext("Date")+'"\
+                            required/>\
                     </div>\
                     <div id="extra-content"></div>\
                     <div id="event-buttons">\
-                        <a id="button-delete" class="btn"><i class="material-icons">delete</i></a>\
-                        <a id="button-edit" class="btn"><i class="material-icons">repeat</i></a>\
-                        <a id="button-save" class="btn"><i class="material-icons">done</i></a>\
+                        <button id="button-delete" class="material link">\
+                            <i class="material-icons">delete</i>\
+                        </a>\
+                        <button id="button-edit" class="material">\
+                            <i class="material-icons">repeat</i>\
+                        </a>\
+                        <button id="button-save" class="material">\
+                            <i class="material-icons">done</i>\
+                        </a>\
                     </div>\
                 </div>\
             </div>');
@@ -972,10 +990,10 @@ var SpiffCalendarEventDialog = function(options) {
                   <option value="times">'+gettext("until counting")+'</option>\
               </select>\
               <span id="recurring-range-until">\
-                  <input type="text" class="datepicker" required/>\
+                  <input type="text" class="datepicker material" required/>\
               </span>\
               <span id="recurring-range-times">\
-                  '+gettext('<input id="recurring-range-times-field" type="number" min="1" value="1" required/>\
+                  '+gettext('<input id="recurring-range-times-field" class="material" type="number" min="1" value="1" required/>\
                   <label>times.</label>')+'\
               </span>\
             </div>');
@@ -1001,7 +1019,7 @@ var SpiffCalendarEventDialog = function(options) {
         var html = $('\
             <div class="recurring-day" style="display: none">\
               '+gettext('Repeat every\
-              <input class="interval" type="number" min="1" value="1" required/>\
+              <input class="interval material" type="number" min="1" value="1" required/>\
               day(s)')+',\
             </div>');
         html.find('input.interval').data('validator', validator_required);
@@ -1013,7 +1031,7 @@ var SpiffCalendarEventDialog = function(options) {
         var html = $('\
             <div class="recurring-week" style="display: none">\
               '+gettext('Repeat every\
-              <input class="interval" type="number" min="1" value="1" required/>\
+              <input class="interval material" type="number" min="1" value="1" required/>\
               week(s) on\
               <div id="weekdays"></div>')+',\
             </div>');
@@ -1021,7 +1039,7 @@ var SpiffCalendarEventDialog = function(options) {
 
         // Day selector.
         $.each(weekdays, function(i, val) {
-            var day_html = $('<label><input type="checkbox" name="day"/></label>');
+            var day_html = $('<label><input type="checkbox" class="material" name="day"/></label>');
             var input_id = uuid();
             day_html.filter('input').data('value', Math.pow(2, (i == 0) ? 6 : (i-1)));
             day_html.filter('input').prop('id', input_id);
@@ -1042,7 +1060,7 @@ var SpiffCalendarEventDialog = function(options) {
         var html = $('\
             <div class="recurring-month" style="display: none">\
               '+gettext('Repeat every\
-              <input class="interval" type="number" min="1" value="1" required/>\
+              <input class="interval material" type="number" min="1" value="1" required/>\
               month(s), on\
               <span id="recurring-month-byday">\
               the\
@@ -1060,7 +1078,12 @@ var SpiffCalendarEventDialog = function(options) {
               <select id="recurring-month-weekday">\
                   <option value="0">day</option>\
               </select>\
-              <input id="recurring-month-dom" type="number" min="1" max="31" required/>,\
+              <input id="recurring-month-dom"\
+                     class="material"\
+                     type="number"\
+                     min="1"\
+                     max="31"\
+                     required/>,\
             </div>');
         html.find('#recurring-month-dom').hide();
         html.find('input.interval').data('validator', validator_required);
@@ -1092,7 +1115,7 @@ var SpiffCalendarEventDialog = function(options) {
         var html = $('\
              <div class="recurring-year" style="display: none">\
                '+gettext('Repeat every\
-               <input class="interval" type="number" min="1" value="1" required/>\
+               <input class="interval material" type="number" min="1" value="1" required/>\
                year(s)')+',\
             </div>');
         html.find('input.interval').data('validator', validator_required);
@@ -1129,8 +1152,16 @@ var SpiffCalendarEventDialog = function(options) {
             <div>\
                 <h2>'+gettext("Repeating Events")+'</h2>\
                 <div class="general">\
-                    <input id="general-name" type="text" placeholder="'+gettext("Name")+'" required/>\
-                    <input id="general-date" type="text" placeholder="'+gettext("Date")+'" required/>\
+                    <input id="general-name"\
+                        class="material"\
+                        type="text"\
+                        placeholder="'+gettext("Name")+'"\
+                        required/>\
+                    <input id="general-date"\
+                        class="material"\
+                        type="text"\
+                        placeholder="'+gettext("Date")+'"\
+                        required/>\
                 </div>\
                 <div id="extra-content"></div>\
                 <div id="recurring-period" class="radio-bar">\
@@ -1138,8 +1169,8 @@ var SpiffCalendarEventDialog = function(options) {
                 <div id="recurring-detail">\
                 </div>\
                 <div id="buttons">\
-                    <button id="button-delete">'+gettext("Delete")+'</button>\
-                    <button id="button-save">'+gettext("Save")+'</button>\
+                    <button id="button-delete" class="material link">'+gettext("Delete")+'</button>\
+                    <button id="button-save" class="material">'+gettext("Save")+'</button>\
                 </div>\
             </div>');
         that._div.find('#error').hide();
@@ -1158,7 +1189,7 @@ var SpiffCalendarEventDialog = function(options) {
 
         /*/ Month selector.
         $.each(months, function(i, val) {
-            var month_html = $('<label><input type="checkbox" name="month"/></label>');
+            var month_html = $('<label><input type="checkbox" class="material" name="month"/></label>');
             month_html.val(i+1);
             month_html.append(val);
         });
