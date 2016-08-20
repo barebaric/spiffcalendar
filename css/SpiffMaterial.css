@@ -190,8 +190,34 @@ outline: 0;
  * Style for jQuery's selectmenu.
  */
 .ui-selectmenu-button.material {
+position: relative;
 margin: .5em 0 0 .5em;
-padding: .3em;
+line-height: 2.6em;
+height: 2.6em;
+padding: 0 .4em;
+background: none;
+border: none;
+border-radius: 0;
+border-bottom: 1px solid lightgrey;
+background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 96%, #1abc9c 4%);
+background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 96%, #1abc9c 4%);
+background-position: 0 0;
+background-size: 100vh 100%;
+background-repeat: no-repeat;
+outline: 0;
+font-size: 1em;
+font-weight: normal;
+}
+
+.ui-selectmenu-button.material .ui-selectmenu-icon {
+display: none;
+}
+
+.ui-selectmenu-button.material::after {
+position: absolute;
+content: '▼';
+top: 0;
+right: 1em;
 }
 
 /*
