@@ -131,6 +131,27 @@ a.btn i {
 line-height: 2em;
 }
 
+
+a.form-btn {
+background: white;
+display: inline-block;
+vertical-align: middle;
+border-radius: 3px;
+padding: .3em .9em;
+margin: 0 auto;
+background: white;
+box-shadow: 0px 2px 4px rgba(0,0,0,.3);
+-webkit-transition: box-shadow .3s;
+-moz-transition: box-shadow .3s;
+-o-transition: box-shadow .3s;
+transition: box-shadow .3s;
+}
+
+a.form-btn:hover {
+box-shadow: 0px 3px 10px rgba(0,0,0,.4);
+cursor: pointer;
+}
+
 /*
  * Style for jQuery's selectmenu.
  */
