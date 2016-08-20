@@ -1370,7 +1370,7 @@ var SpiffCalendarEventDialog = function(options) {
     that._div.dialog({
         autoOpen: false,
         dialogClass: 'SpiffCalendarDialog',
-        width: $(window).width()*.7,
+        width: $('body').width()*.7,
         minWidth: 650,
     });
 
