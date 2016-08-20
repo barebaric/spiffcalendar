@@ -622,7 +622,8 @@ var SpiffCalendar = function(div, options) {
         // Remove all unsaved events, except the clicked or opened one.
         unfolded.each(function() {
             var ev = $(this);
-            var ev_data = ev.removeClass('unfolded').data('event');
+            ev.removeClass('unfolded').draggable('enable');
+            var ev_data = ev.data('event');
             if (ev_data && !ev_data.id)
                 ev.remove();
         });
@@ -638,6 +639,7 @@ var SpiffCalendar = function(div, options) {
             // Unfold the clicked event.
             if (!theevent.hasClass('unfolded')) {
                 theevent.addClass('unfolded');
+                theevent.draggable('disable');
                 theevent.find('input:first').focus();
             }
         }
