@@ -286,7 +286,7 @@ border: none;
 .ui-datepicker.material .ui-datepicker-header {
 border: none;
 border-radius: 3px 3px 0px 0px; 
-background: #26a69a;
+background: #1abc9c;
 padding: .6em !important;
 color: white;
 font-weight: normal;
@@ -381,7 +381,7 @@ font-weight: normal;
 }
 
 .ui-datepicker.material td.ui-datepicker-current-day a.ui-state-default {
-background: #26a69a;
+background: #1abc9c;
 }
 
 .ui-datepicker.material td.ui-datepicker-today a.ui-state-default {
