@@ -600,9 +600,9 @@ var SpiffCalendar = function(div, options) {
 
     // Fold event when clicking outside of it.
     $('body').click(function(e) {
-        if ($(e.target).closest('.ui-datepicker').length)
-            return;
-        if ($(e.target).closest('.placeholder').length)
+        if ($(e.target).closest('.ui-datepicker').length
+            || $(e.target).closest('.ui-dialog').length
+            || $(e.target).closest('.placeholder').length)
             return;
 
         // Did the user click into empty space on the day?
