@@ -48,12 +48,12 @@ function isodate(date) {
 };
 
 function to_timestamp(date) {
+    if (date == null)
+        return undefined;
     if (typeof date === 'number')
         return date;
     if (typeof date === 'object')
         return date.getTime();
-    if (date == null)
-        return undefined;
     var dateTimeParts = date.split("T");
     var dateParts = dateTimeParts[0].split("-");
     return Date.UTC(dateParts[0], (dateParts[1] - 1), dateParts[2]);
@@ -553,6 +553,10 @@ var SpiffCalendar = function(div, options) {
         });
     };
 
+    this.get_active_date = function() {
+        return to_jsdate(that._div.find('.active')[0].date);
+    };
+
     this.previous = function() {
         if (settings.period == 'month') {
             var timestamp = Date.UTC(settings.start.getUTCFullYear(),
@@ -983,7 +987,7 @@ var SpiffCalendarEventRenderer = function(options) {
     this._serialize = function(html, event_data, include_date) {
         var date = html.find('.general-date').datepicker('getDate');
         // jQuery's datepicker does not return the date in UTC, dammnit.
-        date = date - new Date(date).getTimezoneOffset() * 60000;
+        date = to_jsdate(date - new Date(date).getTimezoneOffset() * 60000);
 
         if (!event_data)
             event_data = {};
@@ -1297,7 +1301,7 @@ var SpiffCalendarEventDialog = function(options) {
         event_data.name = that._div.find('#general-name').val();
         var date = that._div.find('#general-date').datepicker('getDate');
         // jQuery's datepicker does not return the date in UTC, dammnit.
-        event_data.date = date - new Date(date).getTimezoneOffset() * 60000;
+        event_data.date = to_jsdate(date - new Date(date).getTimezoneOffset() * 60000);
 
         // Serialize recurrence data.
         var selected = that._div.find('#recurring-period button.active');
