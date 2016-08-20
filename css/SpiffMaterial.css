@@ -190,17 +190,25 @@ outline: 0;
  * Style for jQuery's selectmenu.
  */
 .ui-selectmenu-button.material {
-	margin: .5em 0 0 .5em;
-	padding: .3em;
+margin: .5em 0 0 .5em;
+padding: .3em;
 }
 
 /*
- * Style for jQuery's dateselector.
+ * Style for jQuery's datepicker.
+ * It needs to be initialized like this:
+ * $('input').addClass('material').datepicker({
+ *     beforeShow: function() {
+ *         $(this).datepicker('widget').addClass('material');
+ *     }
+ * });
+ *
  */
 .ui-datepicker.material {
 border-radius: 3px;
 background: #fefefe;
 padding: 0;
+border: none;
 box-shadow: 0 4px 7px rgba(0, 0, 0, .3);
 -webkit-transition: box-shadow .2s linear;
 -o-transition: box-shadow .2s linear;

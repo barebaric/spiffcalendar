@@ -827,6 +827,9 @@ var SpiffCalendarEventRenderer = function(options) {
                 return;
             var event_data = html.data('event');
             datepicker.datepicker({
+                beforeShow: function() {
+                     $(this).datepicker('widget').addClass('material');
+                },
                 onSelect: function() {
                     this.blur();
                     $(this).change();
@@ -997,7 +1000,11 @@ var SpiffCalendarEventDialog = function(options) {
                   <label>times.</label>')+'\
               </span>\
             </div>');
-        html.find('input.datepicker').datepicker();
+        html.find('input.datepicker').datepicker({
+            beforeShow: function() {
+                 $(this).datepicker('widget').addClass('material');
+            }
+        });
         html.find('input.datepicker').data('validator', validator_required);
         html.find('#recurring-range-times-field').data('validator', validator_required);
         html.find('select').change(function() {
