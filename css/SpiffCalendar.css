@@ -195,7 +195,7 @@ transition: min-height .2s, background-color .2s;
 z-index: 15;
 }
 
-.SpiffCalendar .day.active .wrapper {
+.SpiffCalendar .day.active-done .wrapper {
 display: block;
 overflow-y: auto;
 }

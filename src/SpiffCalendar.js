@@ -582,7 +582,7 @@ var SpiffCalendar = function(div, options) {
             width: day.data('original_width'),
             height: day.data('original_height')
         }, 100, function() {
-            day.removeClass('active').css({
+            day.removeClass('active active-done').css({
                 top: 0,
                 left: 0,
                 width: 'auto',
@@ -708,7 +708,7 @@ var SpiffCalendar = function(div, options) {
             left: left,
             width: w,
             height: h
-        }, 200);
+        }, 200, function() { day.addClass('active-done'); });
     });
 
     this._div.children().bind('wheel mousewheel DOMMouseScroll', function (event) {
