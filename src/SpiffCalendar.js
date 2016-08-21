@@ -958,11 +958,11 @@ var SpiffCalendarEventRenderer = function(options) {
         html = prerendered.clone();
         var html_obj = html[0];
         if (event_data.time)
-            html.className += 'timed';
+            html_obj.className += ' timed';
         if (event_data.freq_type != null && event_data.freq_type !== 'ONE_TIME')
-            html.className += 'recurring';
+            html_obj.className += ' recurring';
         if (event_data.is_exception)
-            html.className += 'exception';
+            html_obj.className += ' exception';
 
         // These fields are only shown on new events.
         if (!event_data.id) {
