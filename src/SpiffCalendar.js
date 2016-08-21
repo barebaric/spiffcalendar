@@ -980,7 +980,7 @@ var SpiffCalendarEventRenderer = function(options) {
         // the user hovers over the element. Updating the draggable options here
         // is a hack, but it's faster, so I don't care.
         draggable_options.appendTo = calendar_div;
-        html.one('mouseenter', on_event_hover);
+        html.one('mouseenter click', on_event_hover);
 
         return html;
     };
