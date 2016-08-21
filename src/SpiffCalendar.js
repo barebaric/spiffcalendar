@@ -963,7 +963,7 @@ var SpiffCalendarEventRenderer = function(options) {
     function on_event_hover() {
         $(this).draggable(draggable_options);
         $(this).click(that.on_event_clicked);
-        $(this).find('input').data('validator', validator_required);
+        $(this).find('.general input').data('validator', validator_required);
     };
 
     this.render = function(calendar_div, event_data) {
