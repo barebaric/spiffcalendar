@@ -121,6 +121,8 @@ var SpiffCalendarBackend = function(options) {
     }, options);
     var settings = this.settings;
     var _prefetcher = null;
+    var _prefetcher_xhr1 = null;
+    var _prefetcher_xhr2 = null;
 
     // These object hold the cache. event_id_to_date is needed because
     // the cache contains only references, so when the date of an
@@ -198,8 +200,12 @@ var SpiffCalendarBackend = function(options) {
         start = to_timestamp(start);
         last = to_timestamp(last);
         prefetcher = setTimeout(function() {
-            that.prefetch(last, last + 42*_MS_PER_DAY);
-            that.prefetch(start - 42*_MS_PER_DAY, start);
+            if (_prefetcher_xhr1)
+                _prefetcher_xhr1.abort();
+            if (_prefetcher_xhr2)
+                _prefetcher_xhr2.abort();
+            _prefetcher_xhr1 = that.prefetch(last, last + 42*_MS_PER_DAY);
+            _prefetcher_xhr2 = that.prefetch(start - 42*_MS_PER_DAY, start);
         }, 200);
 
         while (start <= last) {
@@ -208,7 +214,7 @@ var SpiffCalendarBackend = function(options) {
             start += _MS_PER_DAY;
         }
         // Great, everything was already in the cache.
-        return success_cb();
+        success_cb();
     };
 
     this.prefetch = function(start, last) {
@@ -294,6 +300,7 @@ var SpiffCalendar = function(div, options) {
     var settings = this.settings;
     var backend = settings.backend;
     var render_event = settings.event_renderer.render;
+    var get_range_xhr = null;
     this.regional = $.datepicker.regional[settings.region];
     weekdays = this.regional.dayNames;
     months = this.regional.monthNames;
@@ -447,6 +454,10 @@ var SpiffCalendar = function(div, options) {
     };
 
     this.refresh = function() {
+        // Stop the last update if it is still ongoing.
+        if (get_range_xhr)
+            get_range_xhr.abort();
+
         var today_timestamp = mktoday().getTime();
         var range = that._get_visible_range();
         var start = range.start;
@@ -471,7 +482,7 @@ var SpiffCalendar = function(div, options) {
         }
 
         // Update events.
-        backend.get_range(start, last, function() {
+        get_range_xhr = backend.get_range(start, last, function() {
             settings.on_refresh(that);
 
             // Now update each day.
