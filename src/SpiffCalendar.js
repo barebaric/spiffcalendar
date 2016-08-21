@@ -417,12 +417,10 @@ var SpiffCalendar = function(div, options) {
     };
 
     this._get_visible_range = function() {
-        var thestart = new Date(settings.start.getTime());
-        var thelast = new Date(settings.last.getTime());
         // Visible range always starts on a Sunday.
-        thestart.setDate(thestart.getUTCDate() - thestart.getUTCDay());
-        thelast.setDate(thelast.getUTCDate() + 6 - thelast.getUTCDay());
-        return {start: thestart, last: thelast};
+        var thestart = settings.start.getTime() - settings.start.getUTCDay()*_MS_PER_DAY;
+        var thelast = settings.last.getTime() + (6 - settings.last.getUTCDay())*_MS_PER_DAY;
+        return {start: new Date(thestart), last: new Date(thelast)};
     };
 
     this.href = function(href, refresh) {
@@ -528,7 +526,7 @@ var SpiffCalendar = function(div, options) {
                 var events = $(events_obj);
 
                 // Bail out if we don't have any events.
-                current.setDate(day_no+1);
+                current.setTime(date + _MS_PER_DAY);
                 var event_ids = day_data.events;
                 if (!event_ids)
                     continue;
