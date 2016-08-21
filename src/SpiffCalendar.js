@@ -417,7 +417,7 @@ var SpiffCalendar = function(div, options) {
         }
         else {
             var timestamp = Date.UTC(settings.start.getUTCFullYear(),
-                                     settings.start.getUTCMonth() + 1,
+                                     settings.start.getUTCMonth(),
                                      settings.start.getUTCDate() + settings.period - 1);
             settings.last = new Date(timestamp); // end of period
         }
