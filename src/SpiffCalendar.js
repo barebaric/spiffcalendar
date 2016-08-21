@@ -420,7 +420,7 @@ var SpiffCalendar = function(div, options) {
         // Visible range always starts on a Sunday.
         var thestart = settings.start.getTime() - settings.start.getUTCDay()*_MS_PER_DAY;
         var thelast = settings.last.getTime() + (6 - settings.last.getUTCDay())*_MS_PER_DAY;
-        return {start: new Date(thestart), last: new Date(thelast)};
+        return {start: thestart, last: thelast};
     };
 
     this.href = function(href, refresh) {
@@ -475,12 +475,13 @@ var SpiffCalendar = function(div, options) {
             settings.on_refresh(that);
 
             // Now update each day.
-            var current = new Date(start.getTime());
+            var current = start;
+            var date = new Date(current);
             var last_row_number = 0;
             var placeholder_offset = 0;
             while (current <= last) {
                 // Reset the offset counter on each new row.
-                var date = current.getTime();
+                date.setTime(current);
                 var days_since_start = Math.floor((current - start) / _MS_PER_DAY);
                 var row_number = Math.floor(days_since_start / 7);
                 if (row_number != last_row_number) {
@@ -502,20 +503,20 @@ var SpiffCalendar = function(div, options) {
 
                 // Style the day.
                 clsname = clsname.replace('filler', '').replace('today', '');
-                if (current < setstart || current > setlast)
+                if (date < setstart || date > setlast)
                     clsname += " filler";
-                if (date == today_timestamp)
+                if (current == today_timestamp)
                     clsname += " today";
                 day_div_obj.className = clsname;
 
                 // Update the day number.
-                var day_no = current.getDate();
-                day_div_obj.date = date;
+                var day_no = date.getDate();
+                day_div_obj.date = current;
                 var wrapper = day_div_obj.firstChild;
                 wrapper.firstChild.textContent = day_no;
 
                 // Update the footnote.
-                var day_data = backend.get_day_data(date);
+                var day_data = backend.get_day_data(current);
                 var footnote = settings.footnote_renderer(day_data.footnote);
                 wrapper.children[2].textContent = footnote;
 
@@ -526,7 +527,7 @@ var SpiffCalendar = function(div, options) {
                 var events = $(events_obj);
 
                 // Bail out if we don't have any events.
-                current.setTime(date + _MS_PER_DAY);
+                current += _MS_PER_DAY;
                 var event_ids = day_data.events;
                 if (!event_ids)
                     continue;
