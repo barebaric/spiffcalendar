@@ -1103,12 +1103,11 @@ var SpiffCalendarEventDialog = function(options) {
 
         // Day selector.
         $.each(weekdays, function(i, val) {
-            var day_html = $('<label><input type="checkbox" class="material" name="day"/></label>');
-            var input_id = uuid();
-            day_html.filter('input').data('value', Math.pow(2, (i == 0) ? 6 : (i-1)));
-            day_html.filter('input').prop('id', input_id);
-            day_html.filter('label').prop('for', input_id);
-            day_html.filter('label').append(val);
+            var day_html = $('<label><input\
+                    type="checkbox" class="material" name="day"/>\
+                </label>');
+            day_html.find('input').data('value', Math.pow(2, (i == 0) ? 6 : (i-1)));
+            day_html.append(val);
             html.find('#weekdays').append(day_html);
         });
         html.find('input').data('validator-target', html.find('#weekdays'));
