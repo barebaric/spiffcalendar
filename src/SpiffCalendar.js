@@ -332,9 +332,7 @@ var SpiffCalendar = function(div, options) {
 
     this._calendar_day = function() {
         var html = $('\
-            <td class="day">\
-                <div class="wrapper">\
-                    <div id="day_number"></div>\
+            <td class="day"><div class="wrapper"><div id="day_number"></div>\
                     <div id="events"></div>\
                     <div id="footnote"></div>\
                     <div id="ellipsis"></div>\
@@ -496,7 +494,6 @@ var SpiffCalendar = function(div, options) {
                 var col_number = days_since_start - (row_number * 7);
                 var row = tr_list[row_number+1];
                 var day_div_obj = row.children[col_number+placeholder_offset];
-                var day_div = $(day_div_obj);
 
                 // Skip placeholders.
                 var clsname = day_div_obj.className;
@@ -516,15 +513,16 @@ var SpiffCalendar = function(div, options) {
                 // Update the day number.
                 var day_no = current.getDate();
                 day_div_obj.date = date;
-                day_div_obj.querySelector("#day_number").textContent = day_no;
+                var wrapper = day_div_obj.firstChild;
+                wrapper.firstChild.textContent = day_no;
 
                 // Update the footnote.
                 var day_data = backend.get_day_data(date);
                 var footnote = settings.footnote_renderer(day_data.footnote);
-                day_div_obj.querySelector("#footnote").textContent = footnote;
+                wrapper.children[2].textContent = footnote;
 
                 // Remove all events of that day.
-                var events_obj = day_div_obj.querySelector('#events');
+                var events_obj = wrapper.children[1];
                 while (events_obj.firstChild)
                     events_obj.removeChild(events_obj.firstChild);
                 var events = $(events_obj);
@@ -819,8 +817,88 @@ var SpiffCalendarEventRenderer = function(options) {
         }
     }, options);
 
-    this.prerender = function() {
-        var html = $('\
+    this.on_event_clicked = function() {
+        if (this.initialized)
+            return;
+        this.initialized = true;
+
+        // Initializing the datepicker is extremely slow. By deferring the
+        // initialization until the event is clicked, the refresh time for a
+        // single page was reduced by 200ms.
+        html = $(this);
+        var datepicker = html.find('.general-date');
+        if (datepicker.is('.hasDatepicker'))
+            return;
+        var event_data = html.data('event');
+        datepicker.datepicker({
+            beforeShow: function() {
+                 $(this).datepicker('widget').addClass('material');
+            },
+            onSelect: function() {
+                this.blur();
+                $(this).change();
+            }
+        }).datepicker("setDate", to_jsdate(event_data.date));
+
+        // Some other things that also benefit from being deferred until
+        // clicked.
+        html.find('.general-name').val(event_data.name);
+
+        // Connect event handlers for input validation.
+        var save_btn = html.find('#button-save');
+        var inputs = html.find('#general').children();
+        inputs.keydown(function(e) {
+            $(this).removeClass('error');
+            if (e.keyCode === 13)
+                save_btn.click();
+        });
+        inputs.bind('keyup change select', function(e) {
+            var nothidden = inputs.filter(":not([style$='display: none;'])");
+            var invalid = get_invalid_fields(nothidden);
+            save_btn.prop("disabled", invalid.length != 0);
+        });
+
+        // Connect button event handlers.
+        save_btn.click(function(event) {
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            if (settings.on_save_before(calendar, editor) == false)
+                return;
+            that._serialize(editor, event_data, true);
+            if (settings.on_save(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
+            event.stopPropagation(); // prevent from re-opening
+        });
+        html.find('#button-edit').click(function(event) {
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            if (settings.on_edit_before(calendar, editor) == false)
+                return;
+            that._serialize(editor, event_data, false);
+            if (settings.on_edit(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
+        });
+        html.find('#button-delete').click(function(event) {
+            var editor = $(this).closest('.editor').parent();
+            var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
+            that._serialize(editor, event_data, false);
+            if (settings.on_delete(calendar, editor, event_data) != false)
+                editor.removeClass('unfolded');
+            event.stopPropagation(); // prevent from re-opening
+        });
+
+        // Trigger validation.
+        inputs.keyup();
+
+        // Extra content may be provided by the user.
+        // If the user provided settings.render_extra_content, he may
+        // also want to populate it with data.
+        var extra = html.find('#extra-content');
+        settings.render_extra_content(extra, event_data);
+        settings.deserialize_extra_content(extra, event_data);
+    }
+
+    var prerendered = $('\
             <div class="event">\
                 <div class="label">\
                     <span id="label-left"></span>\
@@ -856,101 +934,37 @@ var SpiffCalendarEventRenderer = function(options) {
                 </div>\
             </div>');
 
-        html.click(function() {
-            html = $(this);
-            if (html.data('initialized'))
-                return;
-            html.data('initialized', true);
-
-            // Initializing the datepicker is extremely slow. By deferring the
-            // initialization until the event is clicked, the refresh time for a
-            // single page was reduced by 200ms.
-            var datepicker = html.find('.general-date');
-            if (datepicker.is('.hasDatepicker'))
-                return;
-            var event_data = html.data('event');
-            datepicker.datepicker({
-                beforeShow: function() {
-                     $(this).datepicker('widget').addClass('material');
-                },
-                onSelect: function() {
-                    this.blur();
-                    $(this).change();
-                }
-            }).datepicker("setDate", to_jsdate(event_data.date));
-
-            // Some other things that also benefit from being deferred until
-            // clicked.
-            html.find('.general-name').val(event_data.name);
-
-            // Connect event handlers for input validation.
-            var save_btn = html.find('#button-save');
-            var inputs = html.find('#general').children();
-            inputs.keydown(function(e) {
-                $(this).removeClass('error');
-                if (e.keyCode === 13)
-                    save_btn.click();
-            });
-            inputs.bind('keyup change select', function(e) {
-                var nothidden = inputs.filter(":not([style$='display: none;'])");
-                var invalid = get_invalid_fields(nothidden);
-                save_btn.prop("disabled", invalid.length != 0);
-            });
-
-            // Connect button event handlers.
-            save_btn.click(function(event) {
-                var editor = $(this).closest('.editor').parent();
-                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-                if (settings.on_save_before(calendar, editor) == false)
-                    return;
-                that._serialize(editor, event_data, true);
-                if (settings.on_save(calendar, editor, event_data) != false)
-                    editor.removeClass('unfolded');
-                event.stopPropagation(); // prevent from re-opening
-            });
-            html.find('#button-edit').click(function(event) {
-                var editor = $(this).closest('.editor').parent();
-                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-                if (settings.on_edit_before(calendar, editor) == false)
-                    return;
-                that._serialize(editor, event_data, false);
-                if (settings.on_edit(calendar, editor, event_data) != false)
-                    editor.removeClass('unfolded');
-            });
-            html.find('#button-delete').click(function(event) {
-                var editor = $(this).closest('.editor').parent();
-                var calendar = editor.closest('.SpiffCalendar').data('SpiffCalendar');
-                that._serialize(editor, event_data, false);
-                if (settings.on_delete(calendar, editor, event_data) != false)
-                    editor.removeClass('unfolded');
-                event.stopPropagation(); // prevent from re-opening
-            });
-
-            // Trigger validation.
-            inputs.keyup();
-
-            // Extra content may be provided by the user.
-            // If the user provided settings.render_extra_content, he may
-            // also want to populate it with data.
-            var extra = html.find('#extra-content');
-            settings.render_extra_content(extra, event_data);
-            settings.deserialize_extra_content(extra, event_data);
-        });
-
-        // Define input validators for pre-defined fields.
-        html.find('input').data('validator', validator_required);
-        return html;
+    var draggable_options = {
+        helper: function(e, ui) {
+            var original = $(e.target).closest(".ui-draggable");
+            return $(this).clone().css({width: original.width()});
+        },
+        revert: "invalid",
+        cursor: "move",
+        revertDuration: 100,
+        start: function () {
+            $(this).hide();
+        },
+        stop: function () {
+            $(this).show();
+        }
     };
-    var prerendered = this.prerender();
+
+    function on_event_hover() {
+        $(this).draggable(draggable_options);
+        $(this).click(that.on_event_clicked);
+        $(this).find('input').data('validator', validator_required);
+    };
 
     this.render = function(calendar_div, event_data) {
-        html = prerendered.clone(true);
+        html = prerendered.clone();
+        var html_obj = html[0];
         if (event_data.time)
-            html.addClass('timed');
+            html.className += 'timed';
         if (event_data.freq_type != null && event_data.freq_type !== 'ONE_TIME')
-            html.addClass('recurring');
+            html.className += 'recurring';
         if (event_data.is_exception)
-            html.addClass('exception');
+            html.className += 'exception';
 
         // These fields are only shown on new events.
         if (!event_data.id) {
@@ -960,26 +974,15 @@ var SpiffCalendarEventRenderer = function(options) {
 
         // Add data to the UI.
         if (event_data.time)
-            html.find('#label-prefix').text(event_data.time);
-        html.find('#label-name').text(event_data.name);
+            html_obj.querySelector('#label-prefix').textContent = event_data.time;
+        html_obj.querySelector('#label-name').textContent = event_data.name;
         settings.on_render(html, event_data);
 
-        html.draggable({
-            appendTo: calendar_div,
-            helper: function(e, ui) {
-                var original = $(e.target).closest(".ui-draggable");
-                return $(this).clone().css({width: original.width()});
-            },
-            revert: "invalid",
-            cursor: "move",
-            revertDuration: 100,
-            start: function (e, ui) {
-                $(this).hide();
-            },
-            stop: function (event, ui) {
-                $(this).show();
-            }
-        });
+        // jQuery's draggable() function is very slow. So we don't call it until
+        // the user hovers over the element. Updating the draggable options here
+        // is a hack, but it's faster, so I don't care.
+        draggable_options.appendTo = calendar_div;
+        html.one('mouseenter', on_event_hover);
 
         return html;
     };
