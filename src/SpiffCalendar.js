@@ -553,7 +553,8 @@ var SpiffCalendar = function(div, options) {
                 var ellipsis_obj = day_div_obj.querySelector('#ellipsis');
                 if (more > 0) {
                     ellipsis_obj.className = 'visible';
-                    ellipsis_obj.textContent = ngettext('%s more', '%s more', more);
+                    var fmt = ngettext('%s more', '%s more', more);
+                    ellipsis_obj.textContent = interpolate(fmt, [more]);
                 }
                 else
                     ellipsis_obj.className = '';
