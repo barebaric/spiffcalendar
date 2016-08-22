@@ -632,7 +632,7 @@ var SpiffCalendar = function(div, options) {
         if (day.is('.day.active'))
             return;
         var day = table.find('.day.active');
-        day.animate({
+        day.velocity({
             top: day.data('original_top'),
             left: day.data('original_left'),
             width: day.data('original_width'),
@@ -761,7 +761,7 @@ var SpiffCalendar = function(div, options) {
             w = $(window).width() - 40;
         }
 
-        day.animate({
+        day.velocity({
             top: top,
             left: left,
             width: w,
