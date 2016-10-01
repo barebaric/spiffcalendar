@@ -384,6 +384,14 @@ var SpiffCalendar = function(div, options) {
         }
     };
 
+    this.get_period = function() {
+        return settings.period;
+    };
+
+    this.get_start = function() {
+        return settings.start;
+    };
+
     this.set_range = function(start, last) {
         var today = mktoday();
         // Defines the days that the user wants to see. The actual visible
