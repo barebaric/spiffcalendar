@@ -276,7 +276,7 @@ var SpiffCalendar = function(div, options) {
                 <a id="next" class="material" value="&gt;">\
                     <i class="material-icons">navigate_next</i>\
                 </a>\
-                <h2 id="month"></h2>\
+                <h2 id="timespan"><span id="month"></span> <span id="year"></span></h2>\
             </div>\
             <div class="range-buttons">\
                 <a class="material" value="Week" data-target="7">\
@@ -466,9 +466,8 @@ var SpiffCalendar = function(div, options) {
         var setlast = settings.last;
 
         // Update navbar text.
-        var month_name = months[setstart.getMonth()];
-        var year = setstart.getFullYear();
-        that._div.find("#month").text(month_name + " " + year);
+        that._div.find("#month").text(months[setstart.getMonth()]);
+        that._div.find("#year").text(setstart.getFullYear());
 
         // There may be extra rows that do not need to be visible in this
         // month. We need to do this before updating each day, because it
