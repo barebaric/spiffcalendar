@@ -373,11 +373,15 @@ var SpiffCalendar = function(div, options) {
         return html;
     };
 
-    this.set_period = function(period) {
+    this.set_period = function(period, refresh) {
         if (period == "month")
             settings.period = period;
         else
             settings.period = parseInt(period);
+        if (refresh != false) {
+            that.set_range(settings.start);
+            that.refresh();
+        }
     };
 
     this.set_range = function(start, last) {
@@ -434,7 +438,7 @@ var SpiffCalendar = function(div, options) {
         if (!href)
             return settings.period + '/' + isodate(settings.start);
         href = href.split('/');
-        that.set_period(href[0]);
+        that.set_period(href[0], false);
         if (href.length > 1)
             var start = to_jsdate(href[1]);
         that.set_range(start);
@@ -618,8 +622,6 @@ var SpiffCalendar = function(div, options) {
     this._div.find("#next").click(this.next);
     this._div.find(".range-buttons a").click(function() {
         that.set_period($(this).data('target'));
-        that.set_range(settings.start);
-        that.refresh();
     });
 
     // Unzoom the day when clicking outside of it.
