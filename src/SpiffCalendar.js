@@ -15,13 +15,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ======================================================================
 // Utilities.
 // ======================================================================
-var periods = ['ONE_TIME', 'DAILY', 'WEEKLY', 'MONTHLY', 'ANNUALLY'];
-var period_names = $.map(periods, function(item, index) {
-    return item.toLowerCase()
-          .split('_')
-          .map(function(i) { return i[0].toUpperCase() + i.substring(1); })
-          .join(' ');
-});
+var FREQ_TYPE_ONE_TIME = 0;
+var FREQ_TYPE_DAILY = 1;
+var FREQ_TYPE_WEEKLY = 2;
+var FREQ_TYPE_MONTHLY = 3;
+var FREQ_TYPE_ANNUALLY = 4;
+var period_names = ['One Time', 'Daily', 'Weekly', 'Monthly', 'Annually'];
 
 function uuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -981,7 +980,7 @@ var SpiffCalendarEventRenderer = function(options) {
         var html_obj = html[0];
         if (event_data.time)
             html_obj.className += ' timed';
-        if (event_data.freq_type != null && event_data.freq_type !== 'ONE_TIME')
+        if (event_data.freq_type != null && event_data.freq_type != FREQ_TYPE_ONE_TIME)
             html_obj.className += ' recurring';
         if (event_data.is_exception)
             html_obj.className += ' exception';
@@ -1197,15 +1196,15 @@ var SpiffCalendarEventDialog = function(options) {
     };
 
     this._get_section_from_freq_type = function(freq_type) {
-        if (freq_type === 'ONE_TIME')
+        if (freq_type == FREQ_TYPE_ONE_TIME)
             return that._div.find('.recurring-never');
-        else if (freq_type === 'DAILY')
+        else if (freq_type == FREQ_TYPE_DAILY)
             return that._div.find('.recurring-day');
-        else if (freq_type === 'WEEKLY')
+        else if (freq_type == FREQ_TYPE_WEEKLY)
             return that._div.find('.recurring-week');
-        else if (freq_type === 'MONTHLY')
+        else if (freq_type == FREQ_TYPE_MONTHLY)
             return that._div.find('.recurring-month');
-        else if (freq_type === 'ANNUALLY')
+        else if (freq_type == FREQ_TYPE_ANNUALLY)
             return that._div.find('.recurring-year');
         console.error('invalid freq_type', freq_type);
     };
@@ -1251,10 +1250,10 @@ var SpiffCalendarEventDialog = function(options) {
         that._div.find('#general-date').data('validator', validator_required);
 
         // Period selector.
-        $.each(periods, function(index, item) {
+        $.each(period_names, function(index, name) {
             var button = $('<button name="period"></button>');
-            button.val(item);
-            button.append(period_names[index]);
+            button.val(index);
+            button.append(name);
             button.click(that._period_changed);
             that._div.find('#recurring-period').append(button);
         });
@@ -1336,24 +1335,24 @@ var SpiffCalendarEventDialog = function(options) {
         event_data.freq_interval = section.find('.interval').val();
 
         // Serialize freq_target.
-        if (freq_type === 'WEEKLY') {
+        if (freq_type == FREQ_TYPE_WEEKLY) {
             var flags = 0;
             section.find('#weekdays input:checked').each(function() {
                 flags |= $(this).data('value');
             });
             event_data.freq_target = flags;
         }
-        else if (freq_type === 'MONTHLY')
+        else if (freq_type == FREQ_TYPE_MONTHLY)
             event_data.freq_target = section.find('#recurring-month-weekday').val();
-        else if (freq_type === 'ANNUALLY')
+        else if (freq_type == FREQ_TYPE_ANNUALLY)
             event_data.freq_target = 0; //section.find('#recurring-year-doy').val(); <- see docs in _update()
         else
             event_data.freq_target = undefined;
 
         // Serialize freq_count.
-        if (freq_type === 'MONTHLY' && event_data.freq_target == 0)
+        if (freq_type == FREQ_TYPE_MONTHLY && event_data.freq_target == 0)
             event_data.freq_count = section.find('#recurring-month-dom').val();
-        else if (freq_type === 'MONTHLY')
+        else if (freq_type == FREQ_TYPE_MONTHLY)
             event_data.freq_count = section.find('#recurring-month-count').val();
         else
             event_data.freq_count = undefined;
@@ -1389,7 +1388,7 @@ var SpiffCalendarEventDialog = function(options) {
         this._div.find("#general-date").datepicker('setDate', date);
 
         var freq_type = settings.event_data.freq_type;
-        var period_id = periods.indexOf(freq_type);
+        var period_id = period_names.indexOf(freq_type);
         if (period_id == -1)
             period_id = 0;
         this._div.find("button")[period_id].click();
@@ -1400,7 +1399,7 @@ var SpiffCalendarEventDialog = function(options) {
             var day_num = date.getDay();
             freq_target = Math.pow(2, (day_num == 0) ? 6 : (day_num-1));
         }
-        var section = that._get_section_from_freq_type('WEEKLY');
+        var section = that._get_section_from_freq_type(FREQ_TYPE_WEEKLY);
         section.find('#weekdays input').each(function() {
             $(this).prop('checked', (freq_target&$(this).data('value')) != 0);
         });
@@ -1409,7 +1408,7 @@ var SpiffCalendarEventDialog = function(options) {
         var freq_target = settings.event_data.freq_target;
         if (freq_target == null)
             freq_target = 0;
-        section = that._get_section_from_freq_type('MONTHLY');
+        section = that._get_section_from_freq_type(FREQ_TYPE_MONTHLY);
         section.find('#recurring-month-weekday').val(freq_target);
         section.find('#recurring-month-weekday').change();
         section.find('#recurring-month-dom').val(date.getUTCDate());
@@ -1429,13 +1428,13 @@ var SpiffCalendarEventDialog = function(options) {
             // 1=first target of the month, 2=second, 4=third
             // -1=last target of the month, -2=second-last, ...
             // 0=every occurence.
-            if (freq_type === 'MONTHLY')
+            if (freq_type == FREQ_TYPE_MONTHLY)
                 section.find('#recurring-month-count').val(settings.event_data.freq_count);
 
             //We have no UI yet for specifying annual events with a fixed target
             //day. Hence for annual events, freq_target is always 0, meaning "same
             //calendar day as the initial event".
-            //else if (freq_type === 'ANNUALLY')
+            //else if (freq_type == FREQ_TYPE_ANNUALLY)
             //    section.find('#recurring-year-doy').val(settings.event_data.freq_target);
 
             // Deserialize until_count and until_date.
